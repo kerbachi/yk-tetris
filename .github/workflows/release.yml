@@ -39,7 +39,9 @@ jobs:
           name: yk-tetris-${{ matrix.platform }}
           path: |
             release/*.AppImage
+            release/*.deb
             release/*.exe
+            release/*.zip
           if-no-files-found: error
 
   release:
@@ -72,4 +74,6 @@ jobs:
           prerelease: false
           files: |
             dist-binaries/*.AppImage
+            dist-binaries/*.deb
             dist-binaries/*.exe
+            dist-binaries/*.zip
