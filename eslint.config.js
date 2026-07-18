@@ -12,4 +12,21 @@ export default tseslint.config(
       ecmaVersion: 2020,
     },
   },
+  {
+    // Electron main process and other CommonJS Node scripts.
+    files: ['**/*.cjs'],
+    languageOptions: {
+      sourceType: 'commonjs',
+      globals: {
+        require: 'readonly',
+        module: 'writable',
+        process: 'readonly',
+        __dirname: 'readonly',
+        console: 'readonly',
+      },
+    },
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off',
+    },
+  },
 );

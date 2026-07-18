@@ -34,6 +34,28 @@ level still increases every 10 cleared lines. Then click **Start / Restart**:
 When the game ends, the Game Over dialog lets you change the difficulty and
 **Play Again**.
 
+## Desktop binaries (Windows & Linux)
+
+The web app is packaged as a standalone desktop app with
+[Electron](https://www.electronjs.org/) + `electron-builder`.
+
+```bash
+npm run electron:dev   # build the web app and open it in an Electron window
+npm run dist:linux     # build a Linux AppImage in release/
+npm run dist:win       # build a Windows NSIS installer in release/ (needs Wine on Linux)
+```
+
+Notes:
+
+- Artifacts are written to `release/` (git-ignored).
+- Building the **Windows** target from a non-Windows host requires
+  [Wine](https://electron.build/multi-platform-build#linux). The recommended way
+  to produce release installers for both platforms is the
+  `Release binaries` GitHub Actions workflow (`.github/workflows/release.yml`),
+  which builds on native `ubuntu-latest` and `windows-latest` runners. Trigger it
+  manually (workflow_dispatch) or by pushing a `v*` tag, then download the
+  binaries from the run's artifacts.
+
 ## Project structure
 
 - `src/game/pieces.ts` — tetromino definitions, colors, rotation helper
