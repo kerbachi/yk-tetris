@@ -1,0 +1,10 @@
+{
+  "name": "block-pulse-tetris",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Mobile Tetris with missions, XP, graphics, and sound",
+  "scripts": {
+    "start": "npx --yes serve -l 4173",
+    "serve": "npx --yes serve -l 4173"
+  }
+}
