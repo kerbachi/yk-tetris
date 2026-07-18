@@ -12,9 +12,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "electron:dev": "npm run build && electron .",
-    "dist": "npm run build && electron-builder",
-    "dist:linux": "npm run build && electron-builder --linux",
-    "dist:win": "npm run build && electron-builder --win"
+    "dist": "npm run build && electron-builder --publish never",
+    "dist:linux": "npm run build && electron-builder --linux --publish never",
+    "dist:win": "npm run build && electron-builder --win --publish never"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
