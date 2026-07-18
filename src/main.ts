@@ -26,6 +26,21 @@ const levelEl = document.getElementById('level')!;
 const statusEl = document.getElementById('status')!;
 const startBtn = document.getElementById('start')!;
 
+const modalEl = document.getElementById('gameover-modal')!;
+const finalScoreEl = document.getElementById('final-score')!;
+const finalLinesEl = document.getElementById('final-lines')!;
+const finalLevelEl = document.getElementById('final-level')!;
+const playAgainBtn = document.getElementById('play-again')!;
+
+const showGameOver = (game: GameState) => {
+  finalScoreEl.textContent = String(game.score);
+  finalLinesEl.textContent = String(game.lines);
+  finalLevelEl.textContent = String(game.level);
+  modalEl.classList.remove('hidden');
+};
+
+const hideGameOver = () => modalEl.classList.add('hidden');
+
 let state: GameState | null = null;
 let paused = false;
 let lastTick = 0;
@@ -92,7 +107,10 @@ const loop = (timestamp: number) => {
     if (timestamp - lastTick > dropInterval(state.level)) {
       state = tick(state);
       lastTick = timestamp;
-      if (state.gameOver) statusEl.textContent = 'Game Over';
+      if (state.gameOver) {
+        statusEl.textContent = 'Game Over';
+        showGameOver(state);
+      }
     }
   }
   render();
@@ -104,6 +122,7 @@ const startGame = () => {
   paused = false;
   lastTick = performance.now();
   statusEl.textContent = 'Playing';
+  hideGameOver();
   cancelAnimationFrame(rafId);
   rafId = requestAnimationFrame(loop);
 };
@@ -136,8 +155,13 @@ window.addEventListener('keydown', (e) => {
       return;
   }
   render();
+  if (state.gameOver) {
+    statusEl.textContent = 'Game Over';
+    showGameOver(state);
+  }
 });
 
 startBtn.addEventListener('click', startGame);
+playAgainBtn.addEventListener('click', startGame);
 
 render();

@@ -6,6 +6,7 @@ import {
   collides,
   createBoard,
   createGame,
+  dropInterval,
   hardDrop,
   move,
   rotate,
@@ -102,6 +103,22 @@ describe('line clearing', () => {
     board[ROWS - 1][0] = 0;
     const { cleared: count } = clearLines(board);
     expect(count).toBe(0);
+  });
+});
+
+describe('drop interval', () => {
+  it('starts gentle at level 1', () => {
+    expect(dropInterval(1)).toBe(1000);
+  });
+
+  it('speeds up as the level increases', () => {
+    expect(dropInterval(2)).toBeLessThan(dropInterval(1));
+    expect(dropInterval(5)).toBeLessThan(dropInterval(2));
+  });
+
+  it('never drops below the floor', () => {
+    expect(dropInterval(100)).toBe(150);
+    expect(dropInterval(50)).toBeGreaterThanOrEqual(150);
   });
 });
 

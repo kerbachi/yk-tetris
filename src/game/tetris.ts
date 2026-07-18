@@ -144,5 +144,7 @@ export const hardDrop = (state: GameState, rng: () => number = Math.random): Gam
 };
 
 // Milliseconds between gravity ticks for the current level.
+// Starts gentle at level 1 and speeds up gradually, with a floor so higher
+// levels stay playable rather than becoming impossibly fast.
 export const dropInterval = (level: number): number =>
-  Math.max(80, 800 - (level - 1) * 70);
+  Math.max(150, 1000 - (level - 1) * 60);

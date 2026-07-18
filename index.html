@@ -39,6 +39,26 @@
         </aside>
       </div>
     </div>
+    <div id="gameover-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="gameover-title">
+      <div class="modal-card">
+        <h2 id="gameover-title">Game Over</h2>
+        <div class="modal-stats">
+          <div class="stat">
+            <span class="label">Score</span>
+            <span id="final-score" class="value">0</span>
+          </div>
+          <div class="stat">
+            <span class="label">Lines</span>
+            <span id="final-lines" class="value">0</span>
+          </div>
+          <div class="stat">
+            <span class="label">Level</span>
+            <span id="final-level" class="value">1</span>
+          </div>
+        </div>
+        <button id="play-again">Play Again</button>
+      </div>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
