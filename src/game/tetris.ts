@@ -3,6 +3,14 @@ import { Matrix, Piece, randomPiece } from './pieces';
 export const COLS = 10;
 export const ROWS = 20;
 
+// Player-selectable difficulty. The chosen difficulty is the starting level,
+// which sets the initial fall speed; the level still ramps up as lines clear.
+export const MIN_DIFFICULTY = 1;
+export const MAX_DIFFICULTY = 5;
+
+export const clampDifficulty = (difficulty: number): number =>
+  Math.min(MAX_DIFFICULTY, Math.max(MIN_DIFFICULTY, Math.floor(difficulty)));
+
 export interface ActivePiece {
   piece: Piece;
   rotation: number;
@@ -17,6 +25,7 @@ export interface GameState {
   score: number;
   lines: number;
   level: number;
+  difficulty: number;
   gameOver: boolean;
 }
 
@@ -29,7 +38,11 @@ const spawn = (piece: Piece): ActivePiece => {
   return { piece, rotation: 0, x, y: 0 };
 };
 
-export const createGame = (rng: () => number = Math.random): GameState => {
+export const createGame = (
+  rng: () => number = Math.random,
+  difficulty = MIN_DIFFICULTY,
+): GameState => {
+  const level = clampDifficulty(difficulty);
   const first = randomPiece(rng);
   return {
     board: createBoard(),
@@ -37,7 +50,8 @@ export const createGame = (rng: () => number = Math.random): GameState => {
     next: randomPiece(rng),
     score: 0,
     lines: 0,
-    level: 1,
+    level,
+    difficulty: level,
     gameOver: false,
   };
 };
@@ -108,7 +122,8 @@ export const lockPiece = (state: GameState, rng: () => number = Math.random): Ga
   const merged = merge(state.board, state.active);
   const { board, cleared } = clearLines(merged);
   const lines = state.lines + cleared;
-  const level = Math.floor(lines / 10) + 1;
+  // Level starts at the chosen difficulty and rises every 10 cleared lines.
+  const level = state.difficulty + Math.floor(lines / 10);
   const score = state.score + LINE_SCORES[cleared] * state.level;
 
   const nextActive = spawn(state.next);
@@ -122,6 +137,7 @@ export const lockPiece = (state: GameState, rng: () => number = Math.random): Ga
     score,
     lines,
     level,
+    difficulty: state.difficulty,
     gameOver,
   };
 };

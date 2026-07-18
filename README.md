@@ -24,11 +24,15 @@ npm run preview  # preview the production build
 
 ## How to play
 
-Click **Start / Restart**, then:
+Pick a **Difficulty** (1–5) — this sets the starting level and fall speed; the
+level still increases every 10 cleared lines. Then click **Start / Restart**:
 
 - **←/→** move, **↑** rotate, **↓** soft drop
 - **Space** hard drop
 - **P** pause
+
+When the game ends, the Game Over dialog lets you change the difficulty and
+**Play Again**.
 
 ## Project structure
 

@@ -27,6 +27,16 @@
             <span class="label">Next</span>
             <canvas id="next" width="120" height="120"></canvas>
           </div>
+          <div class="stat">
+            <span class="label">Difficulty</span>
+            <div id="difficulty" class="difficulty" role="group" aria-label="Select difficulty">
+              <button type="button" data-difficulty="1" class="active">1</button>
+              <button type="button" data-difficulty="2">2</button>
+              <button type="button" data-difficulty="3">3</button>
+              <button type="button" data-difficulty="4">4</button>
+              <button type="button" data-difficulty="5">5</button>
+            </div>
+          </div>
           <button id="start">Start / Restart</button>
           <p id="status" class="status">Press Start</p>
           <ul class="help">
@@ -54,6 +64,16 @@
           <div class="stat">
             <span class="label">Level</span>
             <span id="final-level" class="value">1</span>
+          </div>
+        </div>
+        <div class="stat modal-difficulty">
+          <span class="label">Difficulty</span>
+          <div id="difficulty-modal" class="difficulty" role="group" aria-label="Select difficulty">
+            <button type="button" data-difficulty="1" class="active">1</button>
+            <button type="button" data-difficulty="2">2</button>
+            <button type="button" data-difficulty="3">3</button>
+            <button type="button" data-difficulty="4">4</button>
+            <button type="button" data-difficulty="5">5</button>
           </div>
         </div>
         <button id="play-again">Play Again</button>

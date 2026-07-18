@@ -2,12 +2,14 @@ import { describe, expect, it } from 'vitest';
 import {
   COLS,
   ROWS,
+  clampDifficulty,
   clearLines,
   collides,
   createBoard,
   createGame,
   dropInterval,
   hardDrop,
+  lockPiece,
   move,
   rotate,
   tick,
@@ -103,6 +105,46 @@ describe('line clearing', () => {
     board[ROWS - 1][0] = 0;
     const { cleared: count } = clearLines(board);
     expect(count).toBe(0);
+  });
+});
+
+describe('difficulty', () => {
+  it('clamps difficulty into the 1-5 range', () => {
+    expect(clampDifficulty(0)).toBe(1);
+    expect(clampDifficulty(-3)).toBe(1);
+    expect(clampDifficulty(3)).toBe(3);
+    expect(clampDifficulty(5)).toBe(5);
+    expect(clampDifficulty(9)).toBe(5);
+    expect(clampDifficulty(2.7)).toBe(2);
+  });
+
+  it('starts the game at the chosen difficulty level', () => {
+    const game = createGame(seededRng(1), 4);
+    expect(game.level).toBe(4);
+    expect(game.difficulty).toBe(4);
+  });
+
+  it('defaults to difficulty 1 and clamps out-of-range values', () => {
+    expect(createGame(seededRng(1)).level).toBe(1);
+    expect(createGame(seededRng(1), 42).level).toBe(5);
+  });
+
+  it('higher difficulty means a faster starting fall speed', () => {
+    const easy = createGame(seededRng(1), 1);
+    const hard = createGame(seededRng(1), 5);
+    expect(dropInterval(hard.level)).toBeLessThan(dropInterval(easy.level));
+  });
+
+  it('level ramps above the chosen difficulty as lines clear', () => {
+    // Start at difficulty 3 with 9 lines already cleared, then clear one full row.
+    let game = createGame(seededRng(1), 3);
+    const board = createBoard();
+    for (let c = 0; c < COLS; c++) board[ROWS - 1][c] = 1;
+    game = { ...game, board, lines: 9 };
+    const after = lockPiece(game, seededRng(1));
+    expect(after.lines).toBe(10);
+    expect(after.level).toBe(4); // difficulty 3 + floor(10/10)
+    expect(after.difficulty).toBe(3);
   });
 });
 

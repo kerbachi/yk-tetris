@@ -111,6 +111,40 @@ button:hover {
   margin: 4px 0;
 }
 
+.difficulty {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.difficulty button {
+  width: 34px;
+  padding: 8px 0;
+  font-weight: 700;
+  background: #05060f;
+  color: var(--text);
+  border: 1px solid rgba(98, 208, 255, 0.4);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.difficulty button:hover {
+  filter: none;
+  border-color: var(--accent);
+}
+
+.difficulty button.active {
+  background: var(--accent);
+  color: #05060f;
+  border-color: var(--accent);
+  box-shadow: 0 0 10px rgba(98, 208, 255, 0.5);
+}
+
+.modal-difficulty {
+  align-items: center;
+  margin: 0 0 20px;
+}
+
 .modal {
   position: fixed;
   inset: 0;

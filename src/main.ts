@@ -4,6 +4,7 @@ import {
   GameState,
   ROWS,
   activeMatrix,
+  clampDifficulty,
   createGame,
   dropInterval,
   hardDrop,
@@ -31,6 +32,29 @@ const finalScoreEl = document.getElementById('final-score')!;
 const finalLinesEl = document.getElementById('final-lines')!;
 const finalLevelEl = document.getElementById('final-level')!;
 const playAgainBtn = document.getElementById('play-again')!;
+const difficultyGroups = Array.from(
+  document.querySelectorAll<HTMLElement>('.difficulty'),
+);
+
+let selectedDifficulty = 1;
+
+const syncDifficultyButtons = () => {
+  for (const group of difficultyGroups) {
+    for (const btn of Array.from(group.querySelectorAll('button'))) {
+      const value = Number(btn.dataset.difficulty);
+      btn.classList.toggle('active', value === selectedDifficulty);
+    }
+  }
+};
+
+for (const group of difficultyGroups) {
+  group.addEventListener('click', (e) => {
+    const target = (e.target as HTMLElement).closest('button');
+    if (!target || !target.dataset.difficulty) return;
+    selectedDifficulty = clampDifficulty(Number(target.dataset.difficulty));
+    syncDifficultyButtons();
+  });
+}
 
 const showGameOver = (game: GameState) => {
   finalScoreEl.textContent = String(game.score);
@@ -118,7 +142,7 @@ const loop = (timestamp: number) => {
 };
 
 const startGame = () => {
-  state = createGame();
+  state = createGame(Math.random, selectedDifficulty);
   paused = false;
   lastTick = performance.now();
   statusEl.textContent = 'Playing';
@@ -164,4 +188,5 @@ window.addEventListener('keydown', (e) => {
 startBtn.addEventListener('click', startGame);
 playAgainBtn.addEventListener('click', startGame);
 
+syncDifficultyButtons();
 render();
