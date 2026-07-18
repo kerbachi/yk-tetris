@@ -1,0 +1,38 @@
+# Changelog
+
+All notable changes to this project are documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.1.0] - 2026-07-18
+
+First public release of **yk-tetris** — a browser-based Tetris game that also
+ships as a standalone desktop app for Windows and Linux.
+
+### Added
+
+- **Core Tetris gameplay** — all 7 tetrominoes (I, J, L, O, S, T, Z), rotation
+  with basic wall-kicks, gravity, hard/soft drop, line clearing, scoring, and
+  automatic level-up every 10 cleared lines.
+- **Selectable difficulty (1–5)** — chosen before starting; sets the starting
+  level and fall speed. The in-game level still ramps up as lines are cleared.
+  Difficulty can be picked from the side panel or the Game Over dialog.
+- **Next-piece preview** and live **Score / Lines / Level** stats.
+- **Game Over modal** showing final Score / Lines / Level with a **Play Again**
+  button (and its own difficulty selector).
+- **Keyboard controls** — ←/→ move, ↑ rotate, ↓ soft drop, Space hard drop,
+  P pause.
+- **Desktop binaries** via Electron + electron-builder:
+  - Linux **AppImage** (`npm run dist:linux`).
+  - Windows **NSIS installer** (`npm run dist:win`).
+- **Web build & dev server** via Vite (dev server exposed on all interfaces).
+- **Tooling**: 20 Vitest unit tests, ESLint (flat config), and GitHub Actions
+  CI (lint + test + build) plus a release workflow that publishes Windows and
+  Linux binaries.
+
+### Breaking changes
+
+- None — this is the initial release.
+
+[0.1.0]: https://github.com/kerbachi/yk-tetris/releases/tag/v0.1.0

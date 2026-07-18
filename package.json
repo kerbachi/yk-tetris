@@ -40,12 +40,14 @@
       "target": [
         "AppImage"
       ],
-      "category": "Game"
+      "category": "Game",
+      "artifactName": "yk-tetris-${version}-linux-x86_64.${ext}"
     },
     "win": {
       "target": [
         "nsis"
-      ]
+      ],
+      "artifactName": "yk-tetris-Setup-${version}-win-x64.${ext}"
     },
     "nsis": {
       "oneClick": false,

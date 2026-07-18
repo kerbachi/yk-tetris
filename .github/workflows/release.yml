@@ -33,12 +33,43 @@ jobs:
       - name: Build desktop binary (${{ matrix.platform }})
         run: npm run dist:${{ matrix.platform }}
 
-      - name: Upload artifacts
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: yk-tetris-${{ matrix.platform }}
           path: |
             release/*.AppImage
             release/*.exe
-            release/*.zip
-          if-no-files-found: ignore
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    # Only publish a GitHub Release for tag pushes (e.g. v0.1.0).
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: yk-tetris-*
+          path: dist-binaries
+          merge-multiple: true
+
+      - name: List binaries
+        run: ls -lah dist-binaries
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: yk-tetris ${{ github.ref_name }}
+          body_path: CHANGELOG.md
+          draft: false
+          prerelease: false
+          files: |
+            dist-binaries/*.AppImage
+            dist-binaries/*.exe

@@ -1,6 +1,43 @@
 # yk-tetris
 
 A browser-based Tetris game built with Vite, TypeScript, and the HTML5 Canvas.
+It also ships as a standalone desktop app for **Windows** and **Linux**.
+
+## Download & install
+
+Grab the latest prebuilt binaries from the
+[**Releases** page](https://github.com/kerbachi/yk-tetris/releases/latest).
+
+### Windows
+
+1. Download `yk-tetris-Setup-<version>-win-x64.exe` from the latest release.
+2. Double-click it to run the installer. The build is **not code-signed**, so
+   Windows SmartScreen may show *"Windows protected your PC"* — click
+   **More info → Run anyway** to proceed.
+3. Follow the installer (you can choose the install folder), then launch
+   **yk-tetris** from the Start menu or the desktop shortcut.
+
+To uninstall, use *Settings → Apps* (or *Add or remove programs*).
+
+### Linux
+
+1. Download `yk-tetris-<version>-linux-x86_64.AppImage` from the latest release.
+2. Make it executable and run it:
+
+   ```bash
+   chmod +x yk-tetris-*-linux-x86_64.AppImage
+   ./yk-tetris-*-linux-x86_64.AppImage
+   ```
+
+AppImages require FUSE. If you get a FUSE-related error, either install it
+(`sudo apt install libfuse2` on Debian/Ubuntu) or run without it:
+
+```bash
+./yk-tetris-*-linux-x86_64.AppImage --appimage-extract-and-run
+```
+
+> Prefer to build the binaries yourself? See
+> [Desktop binaries (Windows & Linux)](#desktop-binaries-windows--linux) below.
 
 ## Requirements
 
