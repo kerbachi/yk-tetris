@@ -16,6 +16,8 @@ jobs:
             platform: linux
           - os: windows-latest
             platform: win
+          - os: macos-latest
+            platform: mac
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
@@ -42,6 +44,7 @@ jobs:
             release/*.deb
             release/*.exe
             release/*.zip
+            release/*.dmg
           if-no-files-found: error
 
   release:
@@ -77,3 +80,4 @@ jobs:
             dist-binaries/*.deb
             dist-binaries/*.exe
             dist-binaries/*.zip
+            dist-binaries/*.dmg

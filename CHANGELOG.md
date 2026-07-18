@@ -5,6 +5,19 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2] - 2026-07-18
+
+### Added
+
+- **Browser favicon** — the web app / dev-server tab now shows the yk-tetris
+  icon (a compact variant generated into `public/` by `npm run icon`).
+- **macOS build** — the release now includes a macOS **`.dmg`** (and `.zip`),
+  built on a `macos-latest` runner. The build is unsigned/un-notarized.
+
+### Breaking changes
+
+- None.
+
 ## [0.1.1] - 2026-07-18
 
 ### Added
@@ -50,5 +63,6 @@ ships as a standalone desktop app for Windows and Linux.
 
 - None — this is the initial release.
 
+[0.1.2]: https://github.com/kerbachi/yk-tetris/releases/tag/v0.1.2
 [0.1.1]: https://github.com/kerbachi/yk-tetris/releases/tag/v0.1.1
 [0.1.0]: https://github.com/kerbachi/yk-tetris/releases/tag/v0.1.0

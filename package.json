@@ -1,7 +1,7 @@
 {
   "name": "yk-tetris",
   "private": true,
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "module",
   "main": "electron/main.cjs",
   "author": "yk-tetris maintainers <noreply@users.noreply.github.com>",
@@ -17,7 +17,8 @@
     "electron:dev": "npm run build && electron .",
     "dist": "npm run build && electron-builder --publish never",
     "dist:linux": "npm run build && electron-builder --linux --publish never",
-    "dist:win": "npm run build && electron-builder --win --publish never"
+    "dist:win": "npm run build && electron-builder --win --publish never",
+    "dist:mac": "npm run build && electron-builder --mac --publish never"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
@@ -62,6 +63,16 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "artifactName": "yk-tetris-Setup-${version}-win-x64.${ext}"
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "icon": "build/icon.png",
+      "category": "public.app-category.games",
+      "identity": null,
+      "artifactName": "yk-tetris-${version}-mac-${arch}.${ext}"
     }
   }
 }
