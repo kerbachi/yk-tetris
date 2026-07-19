@@ -5,7 +5,19 @@ It also ships as a standalone desktop app for **Windows** and **Linux**.
 
 ## Download & install
 
-Grab the latest prebuilt binaries from the
+Prebuilt binaries are attached to each [GitHub Release](https://github.com/kerbachi/yk-tetris/releases)
+(they are not committed to the git repo). Direct downloads for the latest
+release (**v0.1.2**):
+
+| OS | Download |
+| --- | --- |
+| Windows (installer) | [yk-tetris-Setup-0.1.2-win-x64.exe](https://github.com/kerbachi/yk-tetris/releases/download/v0.1.2/yk-tetris-Setup-0.1.2-win-x64.exe) |
+| Windows (portable) | [yk-tetris-0.1.2-win-x64-portable.zip](https://github.com/kerbachi/yk-tetris/releases/download/v0.1.2/yk-tetris-0.1.2-win-x64-portable.zip) |
+| Linux (AppImage) | [yk-tetris-0.1.2-linux-x86_64.AppImage](https://github.com/kerbachi/yk-tetris/releases/download/v0.1.2/yk-tetris-0.1.2-linux-x86_64.AppImage) |
+| Linux (Debian/Ubuntu) | [yk-tetris-0.1.2-linux-x86_64.deb](https://github.com/kerbachi/yk-tetris/releases/download/v0.1.2/yk-tetris-0.1.2-linux-x86_64.deb) |
+| macOS (Apple Silicon) | [yk-tetris-0.1.2-mac-arm64.dmg](https://github.com/kerbachi/yk-tetris/releases/download/v0.1.2/yk-tetris-0.1.2-mac-arm64.dmg) |
+
+For other versions, or if a link 404s, browse the
 [**Releases** page](https://github.com/kerbachi/yk-tetris/releases/latest).
 
 ### Windows
