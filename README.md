@@ -103,8 +103,11 @@ level still increases every 10 cleared lines. Then click **Start / Restart**:
 - **Space** hard drop
 - **P** pause
 
+Or click **Watch AI** to let a built-in heuristic bot play for you (same
+controls for pause; keyboard movement is disabled while the AI is driving).
+
 When the game ends, the Game Over dialog lets you change the difficulty and
-**Play Again**.
+**Play Again** (or **Watch AI** again).
 
 ## Desktop binaries (Windows, Linux & macOS)
 
@@ -136,5 +139,6 @@ Notes:
 
 - `src/game/pieces.ts` — tetromino definitions, colors, rotation helper
 - `src/game/tetris.ts` — pure game logic (board, collision, movement, gravity, scoring)
-- `src/game/tetris.test.ts` — Vitest unit tests for the game logic
+- `src/game/ai.ts` — heuristic placement AI (El-Tetris-style scoring) and action planner
+- `src/game/*.test.ts` — Vitest unit tests for the game logic and AI
 - `src/main.ts` — Canvas rendering, input handling, and the game loop

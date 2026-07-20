@@ -40,6 +40,7 @@
             </div>
           </div>
           <button id="start">Start / Restart</button>
+          <button id="watch-ai" class="secondary">Watch AI</button>
           <p id="status" class="status">Press Start</p>
           <ul class="help">
             <li>&larr; &rarr; : Move</li>
@@ -47,6 +48,7 @@
             <li>&darr; : Soft drop</li>
             <li>Space : Hard drop</li>
             <li>P : Pause</li>
+            <li>Watch AI : auto-play</li>
           </ul>
         </aside>
       </div>
@@ -78,7 +80,10 @@
             <button type="button" data-difficulty="5">5</button>
           </div>
         </div>
-        <button id="play-again">Play Again</button>
+        <div class="modal-actions">
+          <button id="play-again">Play Again</button>
+          <button id="play-again-ai" class="secondary">Watch AI</button>
+        </div>
       </div>
     </div>
     <script type="module" src="/src/main.ts"></script>

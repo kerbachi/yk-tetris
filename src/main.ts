@@ -12,9 +12,12 @@ import {
   rotate,
   tick,
 } from './game/tetris';
+import { applyAiAction, nextAiAction } from './game/ai';
 import { PIECE_COLORS, Piece } from './game/pieces';
 
 const CELL = 30;
+/** Delay between AI rotate/move/drop steps so play is watchable. */
+const AI_STEP_MS = 90;
 
 const boardCanvas = document.getElementById('board') as HTMLCanvasElement;
 const nextCanvas = document.getElementById('next') as HTMLCanvasElement;
@@ -26,12 +29,14 @@ const linesEl = document.getElementById('lines')!;
 const levelEl = document.getElementById('level')!;
 const statusEl = document.getElementById('status')!;
 const startBtn = document.getElementById('start')!;
+const watchAiBtn = document.getElementById('watch-ai')!;
 
 const modalEl = document.getElementById('gameover-modal')!;
 const finalScoreEl = document.getElementById('final-score')!;
 const finalLinesEl = document.getElementById('final-lines')!;
 const finalLevelEl = document.getElementById('final-level')!;
 const playAgainBtn = document.getElementById('play-again')!;
+const playAgainAiBtn = document.getElementById('play-again-ai')!;
 const difficultyGroups = Array.from(
   document.querySelectorAll<HTMLElement>('.difficulty'),
 );
@@ -67,7 +72,9 @@ const hideGameOver = () => modalEl.classList.add('hidden');
 
 let state: GameState | null = null;
 let paused = false;
+let aiMode = false;
 let lastTick = 0;
+let lastAiStep = 0;
 let rafId = 0;
 
 const drawCell = (
@@ -126,8 +133,24 @@ const renderNext = (piece: Piece) => {
   }
 };
 
+const playingLabel = () => (aiMode ? 'AI Playing' : 'Playing');
+
 const loop = (timestamp: number) => {
   if (state && !state.gameOver && !paused) {
+    if (aiMode && timestamp - lastAiStep > AI_STEP_MS) {
+      const action = nextAiAction(state);
+      if (action) {
+        state = applyAiAction(state, action);
+        lastAiStep = timestamp;
+        // Reset gravity clock after a hard drop so the next piece isn't rushed.
+        if (action === 'hardDrop') lastTick = timestamp;
+        if (state.gameOver) {
+          statusEl.textContent = 'Game Over';
+          showGameOver(state);
+        }
+      }
+    }
+
     if (timestamp - lastTick > dropInterval(state.level)) {
       state = tick(state);
       lastTick = timestamp;
@@ -141,11 +164,14 @@ const loop = (timestamp: number) => {
   rafId = requestAnimationFrame(loop);
 };
 
-const startGame = () => {
+const startGame = (withAi: boolean) => {
+  aiMode = withAi;
   state = createGame(Math.random, selectedDifficulty);
   paused = false;
-  lastTick = performance.now();
-  statusEl.textContent = 'Playing';
+  const now = performance.now();
+  lastTick = now;
+  lastAiStep = now;
+  statusEl.textContent = playingLabel();
   hideGameOver();
   cancelAnimationFrame(rafId);
   rafId = requestAnimationFrame(loop);
@@ -153,6 +179,16 @@ const startGame = () => {
 
 window.addEventListener('keydown', (e) => {
   if (!state || state.gameOver) return;
+
+  if (e.key === 'p' || e.key === 'P') {
+    paused = !paused;
+    statusEl.textContent = paused ? 'Paused' : playingLabel();
+    return;
+  }
+
+  // AI owns the controls while watching — only pause is allowed.
+  if (aiMode) return;
+
   switch (e.key) {
     case 'ArrowLeft':
       state = move(state, -1, 0);
@@ -170,11 +206,6 @@ window.addEventListener('keydown', (e) => {
       e.preventDefault();
       state = hardDrop(state);
       break;
-    case 'p':
-    case 'P':
-      paused = !paused;
-      statusEl.textContent = paused ? 'Paused' : 'Playing';
-      break;
     default:
       return;
   }
@@ -185,8 +216,10 @@ window.addEventListener('keydown', (e) => {
   }
 });
 
-startBtn.addEventListener('click', startGame);
-playAgainBtn.addEventListener('click', startGame);
+startBtn.addEventListener('click', () => startGame(false));
+watchAiBtn.addEventListener('click', () => startGame(true));
+playAgainBtn.addEventListener('click', () => startGame(false));
+playAgainAiBtn.addEventListener('click', () => startGame(true));
 
 syncDifficultyButtons();
 render();

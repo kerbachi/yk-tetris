@@ -89,8 +89,31 @@ button {
   cursor: pointer;
 }
 
+button.secondary {
+  margin-top: 8px;
+  color: var(--accent);
+  background: transparent;
+  border: 1px solid rgba(98, 208, 255, 0.55);
+}
+
+button.secondary:hover {
+  filter: none;
+  background: rgba(98, 208, 255, 0.12);
+}
+
 button:hover {
   filter: brightness(1.1);
+}
+
+.modal-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+}
+
+.modal-actions button {
+  width: 100%;
 }
 
 .status {
@@ -202,6 +225,10 @@ button:hover {
 }
 
 .modal-card button {
-  width: auto;
+  width: 100%;
   padding: 10px 28px;
+}
+
+.modal-card button.secondary {
+  margin-top: 8px;
 }
