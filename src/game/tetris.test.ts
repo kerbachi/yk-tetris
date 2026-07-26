@@ -8,10 +8,12 @@ import {
   createBoard,
   createGame,
   dropInterval,
+  ghostPiece,
   hardDrop,
   lockPiece,
   move,
   rotate,
+  showGhost,
   tick,
 } from './tetris';
 import { rotateCW } from './pieces';
@@ -145,6 +147,34 @@ describe('difficulty', () => {
     expect(after.lines).toBe(10);
     expect(after.level).toBe(4); // difficulty 3 + floor(10/10)
     expect(after.difficulty).toBe(3);
+  });
+});
+
+describe('ghost piece', () => {
+  it('is enabled only for difficulty 1 and 2', () => {
+    expect(showGhost(createGame(seededRng(1), 1))).toBe(true);
+    expect(showGhost(createGame(seededRng(1), 2))).toBe(true);
+    expect(showGhost(createGame(seededRng(1), 3))).toBe(false);
+    expect(showGhost(createGame(seededRng(1), 5))).toBe(false);
+  });
+
+  it('reports the landing position (at or above the floor, below spawn)', () => {
+    const game = createGame(seededRng(1), 1);
+    const ghost = ghostPiece(game);
+    expect(ghost.x).toBe(game.active.x);
+    expect(ghost.y).toBeGreaterThan(game.active.y);
+    // The ghost cannot move any further down.
+    expect(collides(game.board, { ...ghost, y: ghost.y + 1 })).toBe(true);
+    // Same piece/rotation, just translated down.
+    expect(ghost.piece.name).toBe(game.active.piece.name);
+    expect(ghost.rotation).toBe(game.active.rotation);
+  });
+
+  it('lands where a hard drop locks the piece', () => {
+    const game = createGame(seededRng(3), 1);
+    const viaGhost = lockPiece({ ...game, active: ghostPiece(game) }, seededRng(3));
+    const viaHardDrop = hardDrop(game, seededRng(3));
+    expect(viaGhost.board).toEqual(viaHardDrop.board);
   });
 });
 

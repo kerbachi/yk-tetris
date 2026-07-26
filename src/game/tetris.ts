@@ -150,13 +150,21 @@ export const tick = (state: GameState, rng: () => number = Math.random): GameSta
   return lockPiece(state, rng);
 };
 
-export const hardDrop = (state: GameState, rng: () => number = Math.random): GameState => {
-  if (state.gameOver) return state;
+// The position where the active piece would land if dropped straight down.
+export const ghostPiece = (state: GameState): ActivePiece => {
   let current = state.active;
   while (!collides(state.board, { ...current, y: current.y + 1 })) {
     current = { ...current, y: current.y + 1 };
   }
-  return lockPiece({ ...state, active: current }, rng);
+  return current;
+};
+
+// Beginner aid: show the landing shadow only on the two easiest difficulties.
+export const showGhost = (state: GameState): boolean => state.difficulty <= 2;
+
+export const hardDrop = (state: GameState, rng: () => number = Math.random): GameState => {
+  if (state.gameOver) return state;
+  return lockPiece({ ...state, active: ghostPiece(state) }, rng);
 };
 
 // Milliseconds between gravity ticks for the current level.

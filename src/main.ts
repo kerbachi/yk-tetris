@@ -7,9 +7,11 @@ import {
   clampDifficulty,
   createGame,
   dropInterval,
+  ghostPiece,
   hardDrop,
   move,
   rotate,
+  showGhost,
   tick,
 } from './game/tetris';
 import { PIECE_COLORS, Piece } from './game/pieces';
@@ -83,6 +85,20 @@ const drawCell = (
   target.strokeRect(x * CELL, y * CELL, CELL, CELL);
 };
 
+// Landing-shadow cell: translucent fill plus a dashed outline in the piece color.
+const drawGhostCell = (x: number, y: number, color: string) => {
+  ctx.save();
+  ctx.globalAlpha = 0.18;
+  ctx.fillStyle = color;
+  ctx.fillRect(x * CELL, y * CELL, CELL, CELL);
+  ctx.globalAlpha = 0.85;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.setLineDash([5, 4]);
+  ctx.strokeRect(x * CELL + 1, y * CELL + 1, CELL - 2, CELL - 2);
+  ctx.restore();
+};
+
 const render = () => {
   ctx.clearRect(0, 0, boardCanvas.width, boardCanvas.height);
   if (!state) return;
@@ -95,6 +111,21 @@ const render = () => {
   }
 
   const matrix = activeMatrix(state.active);
+
+  // Landing shadow (ghost) — only on the easiest difficulties, and only when it
+  // sits below the active piece so it does not clutter the piece itself.
+  if (showGhost(state)) {
+    const ghost = ghostPiece(state);
+    if (ghost.y > state.active.y) {
+      for (let r = 0; r < matrix.length; r++) {
+        for (let c = 0; c < matrix[r].length; c++) {
+          if (matrix[r][c] === 0) continue;
+          drawGhostCell(ghost.x + c, ghost.y + r, state.active.piece.color);
+        }
+      }
+    }
+  }
+
   for (let r = 0; r < matrix.length; r++) {
     for (let c = 0; c < matrix[r].length; c++) {
       if (matrix[r][c] === 0) continue;
