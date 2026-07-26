@@ -171,38 +171,6 @@ export const BLOCKS: Record<number, BlockDef> = {
   ),
 };
 
-/** Creative hotbar — scroll with the mouse wheel; keys 1–9 pick the first nine. */
-export const HOTBAR: BlockId[] = [
-  GRASS,
-  DIRT,
-  STONE,
-  COBBLE,
-  WOOD,
-  PLANKS,
-  SAND,
-  LEAVES,
-  COAL_ORE,
-  IRON_ORE,
-  COPPER_ORE,
-  GOLD_ORE,
-  REDSTONE_ORE,
-  LAPIS_ORE,
-  DIAMOND_ORE,
-  EMERALD_ORE,
-  COAL_BLOCK,
-  IRON_BLOCK,
-  COPPER_BLOCK,
-  GOLD_BLOCK,
-  REDSTONE_BLOCK,
-  LAPIS_BLOCK,
-  DIAMOND_BLOCK,
-  EMERALD_BLOCK,
-  QUARTZ_BLOCK,
-  AMETHYST_BLOCK,
-];
-
-export const HOTBAR_VISIBLE = 9;
-
 export const isSolid = (id: BlockId): boolean => BLOCKS[id]?.solid ?? false;
 export const isBreakable = (id: BlockId): boolean => BLOCKS[id]?.breakable ?? false;
 export const blockName = (id: BlockId): string => BLOCKS[id]?.name ?? 'Unknown';

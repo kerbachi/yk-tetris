@@ -1,12 +1,6 @@
 import * as THREE from 'three';
-import {
-  HOTBAR,
-  HOTBAR_VISIBLE,
-  blockName,
-  isBreakable,
-  isSolid,
-  type BlockId,
-} from './blocks';
+import { isBreakable, isSolid, type BlockId } from './blocks';
+import { HOTBAR, HOTBAR_VISIBLE, getTool, itemName, type HotbarItem } from './items';
 import { meshChunk } from './mesher';
 import {
   createPlayer,
@@ -18,13 +12,17 @@ import {
 } from './player';
 import { raycast, type RayHit } from './raycast';
 import { createAtlasCanvas } from './textures';
+import { mineDuration } from './tools';
 import { World, chunkKey } from './world';
 
 export interface HudSnapshot {
   selected: number;
-  blockName: string;
+  itemName: string;
+  item: HotbarItem;
   fps: number;
   locked: boolean;
+  miningProgress: number;
+  swinging: boolean;
 }
 
 export class MinecraftGame {
@@ -38,6 +36,7 @@ export class MinecraftGame {
   private readonly atlasTexture: THREE.CanvasTexture;
   private readonly material: THREE.MeshLambertMaterial;
   private readonly highlight: THREE.LineSegments;
+  private readonly highlightMat: THREE.LineBasicMaterial;
   readonly atlasCanvas: HTMLCanvasElement;
   private readonly input: InputState = {
     forward: false,
@@ -59,6 +58,11 @@ export class MinecraftGame {
   private readonly container: HTMLElement;
   private readonly onHud: (hud: HudSnapshot) => void;
   private raf = 0;
+
+  private mining = false;
+  private mineProgress = 0;
+  private mineTarget: { x: number; y: number; z: number } | null = null;
+  private swingTimer = 0;
 
   constructor(container: HTMLElement, onHud: (hud: HudSnapshot) => void, seed = 42) {
     this.container = container;
@@ -86,7 +90,6 @@ export class MinecraftGame {
     this.atlasCanvas = createAtlasCanvas();
     this.atlasTexture = new THREE.CanvasTexture(this.atlasCanvas);
     // Keep V=0 at the top of the canvas so tileUv() matches blit order.
-    // (Three's default flipY would sample the empty bottom row → black ground.)
     this.atlasTexture.flipY = false;
     this.atlasTexture.magFilter = THREE.NearestFilter;
     this.atlasTexture.minFilter = THREE.NearestFilter;
@@ -98,10 +101,8 @@ export class MinecraftGame {
     });
 
     const edges = new THREE.EdgesGeometry(new THREE.BoxGeometry(1.002, 1.002, 1.002));
-    this.highlight = new THREE.LineSegments(
-      edges,
-      new THREE.LineBasicMaterial({ color: 0x111111 }),
-    );
+    this.highlightMat = new THREE.LineBasicMaterial({ color: 0x111111 });
+    this.highlight = new THREE.LineSegments(edges, this.highlightMat);
     this.highlight.visible = false;
     this.scene.add(this.highlight);
 
@@ -136,12 +137,12 @@ export class MinecraftGame {
     this.material.dispose();
     this.atlasTexture.dispose();
     this.highlight.geometry.dispose();
-    (this.highlight.material as THREE.Material).dispose();
+    this.highlightMat.dispose();
     this.renderer.dispose();
     this.renderer.domElement.remove();
   }
 
-  getSelectedBlock(): BlockId {
+  getSelectedItem(): HotbarItem {
     return HOTBAR[this.selected] ?? HOTBAR[0]!;
   }
 
@@ -158,12 +159,22 @@ export class MinecraftGame {
     this.hit = this.locked
       ? raycast(this.world, eye.x, eye.y, eye.z, dir.x, dir.y, dir.z, 6)
       : null;
+
+    this.updateMining(dt);
+
     if (this.hit) {
       this.highlight.position.set(this.hit.x + 0.5, this.hit.y + 0.5, this.hit.z + 0.5);
       this.highlight.visible = true;
+      // Crack-ish feedback: brighten outline as mining progresses
+      const t = this.mineProgress;
+      const c = new THREE.Color().setRGB(0.07 + t * 0.9, 0.07 + t * 0.35, 0.07);
+      this.highlightMat.color.copy(c);
     } else {
       this.highlight.visible = false;
+      this.highlightMat.color.setHex(0x111111);
     }
+
+    if (this.swingTimer > 0) this.swingTimer = Math.max(0, this.swingTimer - dt);
 
     this.rebuildDirtyChunks();
     this.renderer.render(this.scene, this.camera);
@@ -176,17 +187,55 @@ export class MinecraftGame {
       this.fpsTimer = 0;
     }
 
+    const item = this.getSelectedItem();
     this.onHud({
       selected: this.selected,
-      blockName: blockName(this.getSelectedBlock()),
+      itemName: itemName(item),
+      item,
       fps: this.fps,
       locked: this.locked,
+      miningProgress: this.mineProgress,
+      swinging: this.swingTimer > 0,
     });
+  }
+
+  private updateMining(dt: number): void {
+    if (!this.mining || !this.locked || !this.hit || !isBreakable(this.hit.block)) {
+      this.resetMining();
+      return;
+    }
+
+    const target = { x: this.hit.x, y: this.hit.y, z: this.hit.z };
+    if (
+      !this.mineTarget ||
+      this.mineTarget.x !== target.x ||
+      this.mineTarget.y !== target.y ||
+      this.mineTarget.z !== target.z
+    ) {
+      this.mineTarget = target;
+      this.mineProgress = 0;
+    }
+
+    const tool = getTool(this.getSelectedItem());
+    const duration = mineDuration(this.hit.block, tool);
+    this.mineProgress += dt / duration;
+    this.swingTimer = 0.2;
+
+    if (this.mineProgress >= 1) {
+      this.world.set(target.x, target.y, target.z, 0);
+      this.resetMining();
+    }
+  }
+
+  private resetMining(): void {
+    this.mineProgress = 0;
+    this.mineTarget = null;
   }
 
   selectSlot(index: number): void {
     if (index < 0 || index >= HOTBAR.length) return;
     this.selected = index;
+    this.resetMining();
   }
 
   /** First index of the 9-slot window shown in the HUD. */
@@ -199,6 +248,7 @@ export class MinecraftGame {
   cycleHotbar(delta: number): void {
     if (HOTBAR.length === 0) return;
     this.selected = (this.selected + delta + HOTBAR.length) % HOTBAR.length;
+    this.resetMining();
   }
 
   private rebuildDirtyChunks(): void {
@@ -235,17 +285,13 @@ export class MinecraftGame {
     geo.setIndex(new THREE.BufferAttribute(data.indices, 1));
   }
 
-  private breakBlock(): void {
-    if (!this.hit || !isBreakable(this.hit.block)) return;
-    this.world.set(this.hit.x, this.hit.y, this.hit.z, 0);
-  }
-
   private placeBlock(): void {
     if (!this.hit) return;
-    const id = this.getSelectedBlock();
+    const item = this.getSelectedItem();
+    if (item.kind !== 'block') return;
+    const id: BlockId = item.id;
     const { px, py, pz } = this.hit;
     if (isSolid(this.world.get(px, py, pz))) return;
-    // Don't place inside the player AABB
     const half = 0.3;
     if (
       px + 1 > this.player.x - half &&
@@ -258,6 +304,7 @@ export class MinecraftGame {
       return;
     }
     this.world.set(px, py, pz, id);
+    this.swingTimer = 0.15;
   }
 
   private resize = (): void => {
@@ -283,7 +330,7 @@ export class MinecraftGame {
     if (e.code >= 'Digit1' && e.code <= 'Digit9') {
       const slot = Number(e.code.slice(5)) - 1;
       const index = this.hotbarWindowStart() + slot;
-      if (index < HOTBAR.length) this.selected = index;
+      if (index < HOTBAR.length) this.selectSlot(index);
     }
     if (e.code === 'Escape' && this.locked) {
       document.exitPointerLock();
@@ -317,8 +364,19 @@ export class MinecraftGame {
       this.renderer.domElement.requestPointerLock();
       return;
     }
-    if (e.button === 0) this.breakBlock();
+    if (e.button === 0) {
+      this.mining = true;
+      // Instant punch for very soft blocks with correct tool still uses hold path
+      this.swingTimer = 0.2;
+    }
     if (e.button === 2) this.placeBlock();
+  };
+
+  private onMouseUp = (e: MouseEvent): void => {
+    if (e.button === 0) {
+      this.mining = false;
+      this.resetMining();
+    }
   };
 
   private onContextMenu = (e: Event): void => {
@@ -327,6 +385,10 @@ export class MinecraftGame {
 
   private onPointerLockChange = (): void => {
     this.locked = document.pointerLockElement === this.renderer.domElement;
+    if (!this.locked) {
+      this.mining = false;
+      this.resetMining();
+    }
   };
 
   private bindEvents(): void {
@@ -334,6 +396,7 @@ export class MinecraftGame {
     window.addEventListener('keydown', this.onKeyDown);
     window.addEventListener('keyup', this.onKeyUp);
     window.addEventListener('mousemove', this.onMouseMove);
+    window.addEventListener('mouseup', this.onMouseUp);
     this.renderer.domElement.addEventListener('mousedown', this.onMouseDown);
     this.renderer.domElement.addEventListener('contextmenu', this.onContextMenu);
     this.renderer.domElement.addEventListener('wheel', this.onWheel, { passive: false });
@@ -345,6 +408,7 @@ export class MinecraftGame {
     window.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('keyup', this.onKeyUp);
     window.removeEventListener('mousemove', this.onMouseMove);
+    window.removeEventListener('mouseup', this.onMouseUp);
     this.renderer.domElement.removeEventListener('mousedown', this.onMouseDown);
     this.renderer.domElement.removeEventListener('contextmenu', this.onContextMenu);
     this.renderer.domElement.removeEventListener('wheel', this.onWheel);

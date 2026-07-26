@@ -130,6 +130,57 @@ body {
   opacity: 0.75;
 }
 
+.slot.tool .swatch {
+  border-color: transparent;
+  background-color: transparent;
+}
+
+#held-item {
+  position: fixed;
+  right: 8%;
+  bottom: 12%;
+  width: 96px;
+  height: 96px;
+  image-rendering: pixelated;
+  pointer-events: none;
+  z-index: 3;
+  transform-origin: 80% 90%;
+  filter: drop-shadow(2px 3px 0 rgba(0, 0, 0, 0.45));
+  transition: transform 0.05s linear;
+}
+
+#held-item.hidden {
+  display: none;
+}
+
+#held-item.swing {
+  transform: rotate(-28deg) translate(-8px, 10px);
+}
+
+#break-bar {
+  position: fixed;
+  left: 50%;
+  top: calc(50% + 22px);
+  transform: translateX(-50%);
+  width: 72px;
+  height: 6px;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  z-index: 3;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+#break-bar.hidden {
+  display: none;
+}
+
+#break-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #c4a35a, #f0e6a8);
+}
+
 #overlay {
   position: fixed;
   inset: 0;

@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Mineral ores & blocks** — coal, iron, copper, gold, redstone, lapis, diamond,
   emerald ores (veins underground) plus matching storage blocks, quartz, and
   amethyst; scrollable 9-slot hotbar (keys 1–9 / mouse wheel).
+- **Tools** — wooden/stone/iron/gold/diamond pickaxe, axe, shovel, sword, and hoe
+  with hold-to-mine speeds, correct-tool bonuses, harvest levels for hard ores,
+  hotbar icons, and a first-person held-item view.
 
 ### Changed
 
