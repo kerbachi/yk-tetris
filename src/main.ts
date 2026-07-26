@@ -1,4 +1,5 @@
 import './style.css';
+import { createBackground } from './background';
 import {
   COLS,
   GameState,
@@ -17,6 +18,8 @@ import {
 import { PIECE_COLORS, Piece } from './game/pieces';
 
 const CELL = 30;
+
+const background = createBackground(document.getElementById('bg') as HTMLCanvasElement);
 
 const boardCanvas = document.getElementById('board') as HTMLCanvasElement;
 const nextCanvas = document.getElementById('next') as HTMLCanvasElement;
@@ -66,6 +69,8 @@ const showGameOver = (game: GameState) => {
   modalEl.classList.remove('hidden');
   // Bring the side-panel difficulty selector back once the game ends.
   difficultyPanel.classList.remove('hidden');
+  // Turn all floating background blocks red on defeat.
+  background.setDefeated(true);
 };
 
 const hideGameOver = () => modalEl.classList.add('hidden');
@@ -183,6 +188,8 @@ const startGame = () => {
   hideGameOver();
   // Hide the side-panel difficulty selector while a game is in progress.
   difficultyPanel.classList.add('hidden');
+  // Restore the normal multi-colored background for a fresh game.
+  background.setDefeated(false);
   cancelAnimationFrame(rafId);
   rafId = requestAnimationFrame(loop);
 };
