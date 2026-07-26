@@ -1,4 +1,5 @@
 import { AIR, BLOCKS, WATER, type BlockId } from './blocks';
+import { tileUv } from './textures';
 import {
   CHUNK_SIZE,
   WORLD_CHUNKS_X,
@@ -12,14 +13,17 @@ export interface ChunkMeshData {
   positions: Float32Array;
   normals: Float32Array;
   colors: Float32Array;
+  uvs: Float32Array;
   indices: Uint32Array;
 }
 
 const FACES: {
   dir: [number, number, number];
   corners: [number, number, number][];
+  /** Local UV for each corner: [u, v] in 0–1 tile space */
+  uvs: [number, number][];
   shade: number;
-  colorIndex: 0 | 1 | 2; // top / side / bottom
+  texIndex: 0 | 1 | 2; // top / side / bottom
 }[] = [
   {
     // +Y top
@@ -30,8 +34,14 @@ const FACES: {
       [1, 1, 0],
       [0, 1, 0],
     ],
+    uvs: [
+      [0, 0],
+      [1, 0],
+      [1, 1],
+      [0, 1],
+    ],
     shade: 1,
-    colorIndex: 0,
+    texIndex: 0,
   },
   {
     // -Y bottom
@@ -42,8 +52,14 @@ const FACES: {
       [1, 0, 1],
       [0, 0, 1],
     ],
+    uvs: [
+      [0, 1],
+      [1, 1],
+      [1, 0],
+      [0, 0],
+    ],
     shade: 0.55,
-    colorIndex: 2,
+    texIndex: 2,
   },
   {
     // +X
@@ -54,8 +70,14 @@ const FACES: {
       [1, 1, 0],
       [1, 1, 1],
     ],
-    shade: 0.8,
-    colorIndex: 1,
+    uvs: [
+      [0, 1],
+      [1, 1],
+      [1, 0],
+      [0, 0],
+    ],
+    shade: 0.85,
+    texIndex: 1,
   },
   {
     // -X
@@ -66,8 +88,14 @@ const FACES: {
       [0, 1, 1],
       [0, 1, 0],
     ],
-    shade: 0.8,
-    colorIndex: 1,
+    uvs: [
+      [0, 1],
+      [1, 1],
+      [1, 0],
+      [0, 0],
+    ],
+    shade: 0.85,
+    texIndex: 1,
   },
   {
     // +Z
@@ -78,8 +106,14 @@ const FACES: {
       [1, 1, 1],
       [0, 1, 1],
     ],
-    shade: 0.7,
-    colorIndex: 1,
+    uvs: [
+      [0, 1],
+      [1, 1],
+      [1, 0],
+      [0, 0],
+    ],
+    shade: 0.75,
+    texIndex: 1,
   },
   {
     // -Z
@@ -90,17 +124,54 @@ const FACES: {
       [0, 1, 0],
       [1, 1, 0],
     ],
-    shade: 0.7,
-    colorIndex: 1,
+    uvs: [
+      [0, 1],
+      [1, 1],
+      [1, 0],
+      [0, 0],
+    ],
+    shade: 0.75,
+    texIndex: 1,
   },
 ];
 
 const isOpaque = (id: BlockId): boolean => id !== AIR && id !== WATER;
 
+const pushFace = (
+  positions: number[],
+  normals: number[],
+  colors: number[],
+  uvs: number[],
+  indices: number[],
+  vertex: number,
+  x: number,
+  y: number,
+  z: number,
+  face: (typeof FACES)[number],
+  tile: number,
+): number => {
+  const { u0, v0, u1, v1 } = tileUv(tile);
+  const shade = face.shade;
+  for (let i = 0; i < 4; i++) {
+    const [cxo, cyo, czo] = face.corners[i]!;
+    const [lu, lv] = face.uvs[i]!;
+    positions.push(x + cxo, y + cyo, z + czo);
+    normals.push(face.dir[0], face.dir[1], face.dir[2]);
+    // Vertex color multiplies the texture (face shading)
+    colors.push(shade, shade, shade);
+    const u = lu === 0 ? u0 : u1;
+    const v = lv === 0 ? v0 : v1;
+    uvs.push(u, v);
+  }
+  indices.push(vertex, vertex + 1, vertex + 2, vertex, vertex + 2, vertex + 3);
+  return vertex + 4;
+};
+
 export const meshChunk = (world: World, cx: number, cy: number, cz: number): ChunkMeshData => {
   const positions: number[] = [];
   const normals: number[] = [];
   const colors: number[] = [];
+  const uvs: number[] = [];
   const indices: number[] = [];
   let vertex = 0;
 
@@ -121,30 +192,27 @@ export const meshChunk = (world: World, cx: number, cy: number, cz: number): Chu
         if (!def) continue;
 
         for (const face of FACES) {
-          const nx = x + face.dir[0];
-          const ny = y + face.dir[1];
-          const nz = z + face.dir[2];
-          const neighbor = world.get(nx, ny, nz);
+          const neighbor = world.get(x + face.dir[0], y + face.dir[1], z + face.dir[2]);
           if (isOpaque(neighbor)) continue;
-
-          const [cr, cg, cb] = def.colors[face.colorIndex]!;
-          const r = cr * face.shade;
-          const g = cg * face.shade;
-          const b = cb * face.shade;
-
-          for (const [cxo, cyo, czo] of face.corners) {
-            positions.push(x + cxo, y + cyo, z + czo);
-            normals.push(face.dir[0], face.dir[1], face.dir[2]);
-            colors.push(r, g, b);
-          }
-          indices.push(vertex, vertex + 1, vertex + 2, vertex, vertex + 2, vertex + 3);
-          vertex += 4;
+          const tile = def.textures[face.texIndex]!;
+          vertex = pushFace(
+            positions,
+            normals,
+            colors,
+            uvs,
+            indices,
+            vertex,
+            x,
+            y,
+            z,
+            face,
+            tile,
+          );
         }
       }
     }
   }
 
-  // Water faces (simple translucent-looking solid color, drawn opaque for simplicity)
   for (let ly = 0; ly < CHUNK_SIZE; ly++) {
     for (let lz = 0; lz < CHUNK_SIZE; lz++) {
       for (let lx = 0; lx < CHUNK_SIZE; lx++) {
@@ -156,17 +224,19 @@ export const meshChunk = (world: World, cx: number, cy: number, cz: number): Chu
         for (const face of FACES) {
           const neighbor = world.get(x + face.dir[0], y + face.dir[1], z + face.dir[2]);
           if (neighbor === WATER || isOpaque(neighbor)) continue;
-          const [cr, cg, cb] = def.colors[0]!;
-          const r = cr * face.shade;
-          const g = cg * face.shade;
-          const b = cb * face.shade;
-          for (const [cxo, cyo, czo] of face.corners) {
-            positions.push(x + cxo, y + cyo, z + czo);
-            normals.push(face.dir[0], face.dir[1], face.dir[2]);
-            colors.push(r, g, b);
-          }
-          indices.push(vertex, vertex + 1, vertex + 2, vertex, vertex + 2, vertex + 3);
-          vertex += 4;
+          vertex = pushFace(
+            positions,
+            normals,
+            colors,
+            uvs,
+            indices,
+            vertex,
+            x,
+            y,
+            z,
+            face,
+            def.textures[0]!,
+          );
         }
       }
     }
@@ -176,6 +246,7 @@ export const meshChunk = (world: World, cx: number, cy: number, cz: number): Chu
     positions: new Float32Array(positions),
     normals: new Float32Array(normals),
     colors: new Float32Array(colors),
+    uvs: new Float32Array(uvs),
     indices: new Uint32Array(indices),
   };
 };

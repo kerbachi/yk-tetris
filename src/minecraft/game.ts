@@ -10,6 +10,7 @@ import {
   type PlayerState,
 } from './player';
 import { raycast, type RayHit } from './raycast';
+import { createAtlasCanvas } from './textures';
 import { World, chunkKey } from './world';
 
 export interface HudSnapshot {
@@ -27,8 +28,10 @@ export class MinecraftGame {
   readonly renderer: THREE.WebGLRenderer;
 
   private readonly chunkMeshes = new Map<string, THREE.Mesh>();
+  private readonly atlasTexture: THREE.CanvasTexture;
   private readonly material: THREE.MeshLambertMaterial;
   private readonly highlight: THREE.LineSegments;
+  readonly atlasCanvas: HTMLCanvasElement;
   private readonly input: InputState = {
     forward: false,
     back: false,
@@ -62,18 +65,27 @@ export class MinecraftGame {
     this.scene.fog = new THREE.Fog(0x87b7e8, 60, 140);
 
     this.camera = new THREE.PerspectiveCamera(75, 1, 0.05, 250);
-    this.renderer = new THREE.WebGLRenderer({ antialias: true });
+    this.renderer = new THREE.WebGLRenderer({ antialias: false });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = false;
     container.appendChild(this.renderer.domElement);
 
-    const hemi = new THREE.HemisphereLight(0xbfdfff, 0x4a5a3a, 0.85);
+    const hemi = new THREE.HemisphereLight(0xbfdfff, 0x4a5a3a, 0.9);
     this.scene.add(hemi);
-    const sun = new THREE.DirectionalLight(0xfff2d6, 1.05);
+    const sun = new THREE.DirectionalLight(0xfff2d6, 1.15);
     sun.position.set(40, 80, 20);
     this.scene.add(sun);
 
-    this.material = new THREE.MeshLambertMaterial({ vertexColors: true });
+    this.atlasCanvas = createAtlasCanvas();
+    this.atlasTexture = new THREE.CanvasTexture(this.atlasCanvas);
+    this.atlasTexture.magFilter = THREE.NearestFilter;
+    this.atlasTexture.minFilter = THREE.NearestFilter;
+    this.atlasTexture.generateMipmaps = false;
+    this.atlasTexture.colorSpace = THREE.SRGBColorSpace;
+    this.material = new THREE.MeshLambertMaterial({
+      map: this.atlasTexture,
+      vertexColors: true,
+    });
 
     const edges = new THREE.EdgesGeometry(new THREE.BoxGeometry(1.002, 1.002, 1.002));
     this.highlight = new THREE.LineSegments(
@@ -112,6 +124,7 @@ export class MinecraftGame {
     }
     this.chunkMeshes.clear();
     this.material.dispose();
+    this.atlasTexture.dispose();
     this.highlight.geometry.dispose();
     (this.highlight.material as THREE.Material).dispose();
     this.renderer.dispose();
@@ -196,6 +209,7 @@ export class MinecraftGame {
     geo.setAttribute('position', new THREE.BufferAttribute(data.positions, 3));
     geo.setAttribute('normal', new THREE.BufferAttribute(data.normals, 3));
     geo.setAttribute('color', new THREE.BufferAttribute(data.colors, 3));
+    geo.setAttribute('uv', new THREE.BufferAttribute(data.uvs, 2));
     geo.setIndex(new THREE.BufferAttribute(data.indices, 1));
   }
 

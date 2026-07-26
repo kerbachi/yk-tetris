@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **yk-minecraft** — a browser Minecraft-style voxel sandbox (`minecraft.html`)
   with procedural terrain, trees, first-person controls, block break/place, and
   an 8-slot hotbar. Linked from the Tetris home page.
+- **Minecraft-like block textures** — 16×16 pixel atlas (grass top/side, dirt,
+  stone, cobble, log rings/bark, planks, leaves, sand, water, bedrock) with
+  nearest-neighbor filtering so blocks read like classic Minecraft.
 
 ## [0.1.2] - 2026-07-18
 

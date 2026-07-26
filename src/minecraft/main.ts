@@ -1,6 +1,7 @@
 import './style.css';
 import { BLOCKS, HOTBAR } from './blocks';
 import { MinecraftGame, type HudSnapshot } from './game';
+import { createAtlasCanvas, tileIconDataUrl } from './textures';
 
 const viewport = document.getElementById('viewport')!;
 const overlay = document.getElementById('overlay')!;
@@ -10,6 +11,7 @@ const fpsEl = document.getElementById('fps')!;
 const selectedEl = document.getElementById('selected')!;
 
 const slotEls: HTMLElement[] = [];
+const atlas = createAtlasCanvas();
 
 const paintHotbar = (selected: number): void => {
   for (let i = 0; i < HOTBAR.length; i++) {
@@ -33,8 +35,10 @@ const buildHotbar = (): void => {
 
     const swatch = document.createElement('div');
     swatch.className = 'swatch';
-    const [r, g, b] = def.colors[0]!;
-    swatch.style.background = `rgb(${Math.round(r * 255)}, ${Math.round(g * 255)}, ${Math.round(b * 255)})`;
+    // Prefer top face texture (grass top, wood rings, etc.)
+    swatch.style.backgroundImage = `url(${tileIconDataUrl(atlas, def.textures[0]!)})`;
+    swatch.style.backgroundSize = 'cover';
+    swatch.style.imageRendering = 'pixelated';
 
     slot.append(key, swatch);
     hotbarEl.appendChild(slot);
