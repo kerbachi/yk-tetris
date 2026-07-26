@@ -160,13 +160,13 @@ body {
 #break-bar {
   position: fixed;
   left: 50%;
-  top: calc(50% + 22px);
+  top: calc(50% + 24px);
   transform: translateX(-50%);
-  width: 72px;
-  height: 6px;
-  background: rgba(0, 0, 0, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  z-index: 3;
+  width: 96px;
+  height: 10px;
+  background: rgba(0, 0, 0, 0.7);
+  border: 2px solid rgba(255, 255, 255, 0.55);
+  z-index: 5;
   pointer-events: none;
   overflow: hidden;
 }
