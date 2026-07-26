@@ -607,6 +607,13 @@ export class MinecraftGame {
       if (this.locked) document.exitPointerLock();
       return;
     }
+    if (e.code === 'KeyF') {
+      e.preventDefault();
+      if (!this.inventoryOpen && this.locked) {
+        this.tryAttackMob();
+      }
+      return;
+    }
 
     if (this.inventoryOpen) {
       if (e.code >= 'Digit1' && e.code <= 'Digit9') {
