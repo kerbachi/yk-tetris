@@ -24,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Blocks / Ores); pick up items and place them on the 9-slot hotbar.
 - **More realistic item art** — richer ore clusters & mineral-block textures,
   shaded tool icons, and isometric cube icons for blocks in the hotbar/inventory.
+- **Mobs** — pigs, cows, chickens, and sheep wander the world; attack with LMB
+  (swords hit harder). Kills drop meat and loot you can pick up (Food inventory tab).
 
 ### Changed
 

@@ -4,10 +4,22 @@ import {
   HOTBAR_SIZE,
   createDefaultHotbar,
   getTool,
+  giveItem,
   itemName,
   type HotbarSlot,
 } from './items';
 import { meshChunk } from './mesher';
+import {
+  createDrop,
+  damageMob,
+  rayHitMob,
+  spawnMobs,
+  updateDrop,
+  updateMob,
+  type DropEntity,
+  type Mob,
+} from './mobs';
+import { createMobMesh, syncMobMesh } from './mobRender';
 import {
   createPlayer,
   eyePosition,
@@ -31,6 +43,7 @@ export interface HudSnapshot {
   inventoryOpen: boolean;
   miningProgress: number;
   swinging: boolean;
+  pickupMessage: string | null;
 }
 
 export class MinecraftGame {
@@ -74,6 +87,15 @@ export class MinecraftGame {
   private mineProgress = 0;
   private mineTarget: { x: number; y: number; z: number } | null = null;
   private swingTimer = 0;
+  private attackCooldown = 0;
+  private pickupMessage: string | null = null;
+  private pickupMessageTimer = 0;
+
+  private mobs: Mob[] = [];
+  private drops: DropEntity[] = [];
+  private readonly mobMeshes = new Map<number, THREE.Group>();
+  private readonly dropMeshes = new Map<number, THREE.Mesh>();
+  private readonly dropMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
 
   constructor(container: HTMLElement, onHud: (hud: HudSnapshot) => void, seed = 42) {
     this.container = container;
@@ -81,6 +103,7 @@ export class MinecraftGame {
     this.world = new World(seed);
     const spawn = this.world.spawnPoint();
     this.player = createPlayer(spawn.x, spawn.y, spawn.z);
+    this.mobs = spawnMobs(this.world, seed);
 
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x87b7e8);
@@ -118,6 +141,7 @@ export class MinecraftGame {
     this.scene.add(this.highlight);
 
     this.rebuildDirtyChunks();
+    for (const mob of this.mobs) this.ensureMobMesh(mob);
     this.bindEvents();
     this.resize();
   }
@@ -149,6 +173,14 @@ export class MinecraftGame {
     this.atlasTexture.dispose();
     this.highlight.geometry.dispose();
     this.highlightMat.dispose();
+    this.dropMaterial.dispose();
+    for (const mesh of this.mobMeshes.values()) this.scene.remove(mesh);
+    for (const mesh of this.dropMeshes.values()) {
+      mesh.geometry.dispose();
+      this.scene.remove(mesh);
+    }
+    this.mobMeshes.clear();
+    this.dropMeshes.clear();
     this.renderer.dispose();
     this.renderer.domElement.remove();
   }
@@ -201,6 +233,14 @@ export class MinecraftGame {
       updatePlayer(this.world, this.player, this.input, dt);
     }
 
+    if (this.attackCooldown > 0) this.attackCooldown = Math.max(0, this.attackCooldown - dt);
+    if (this.pickupMessageTimer > 0) {
+      this.pickupMessageTimer = Math.max(0, this.pickupMessageTimer - dt);
+      if (this.pickupMessageTimer === 0) this.pickupMessage = null;
+    }
+
+    this.updateMobsAndDrops(dt);
+
     const eye = eyePosition(this.player);
     const dir = lookDirection(this.player);
     this.camera.position.set(eye.x, eye.y, eye.z);
@@ -211,12 +251,15 @@ export class MinecraftGame {
         ? raycast(this.world, eye.x, eye.y, eye.z, dir.x, dir.y, dir.z, 6)
         : null;
 
-    this.updateMining(dt);
+    // Prefer mobs over blocks for highlight — hide block outline when aiming at a mob
+    const mobAim = this.findAimedMob(eye, dir, 4);
+    const aimingMob = !!mobAim;
 
-    if (this.hit) {
+    this.updateMining(dt, aimingMob);
+
+    if (this.hit && !aimingMob) {
       this.highlight.position.set(this.hit.x + 0.5, this.hit.y + 0.5, this.hit.z + 0.5);
       this.highlight.visible = true;
-      // Crack-ish feedback: brighten outline as mining progresses
       const t = this.mineProgress;
       const c = new THREE.Color().setRGB(0.07 + t * 0.9, 0.07 + t * 0.35, 0.07);
       this.highlightMat.color.copy(c);
@@ -249,14 +292,149 @@ export class MinecraftGame {
       inventoryOpen: this.inventoryOpen,
       miningProgress: this.mineProgress,
       swinging: this.swingTimer > 0,
+      pickupMessage: this.pickupMessage,
     });
   }
 
-  private updateMining(dt: number): void {
+  private ensureMobMesh(mob: Mob): void {
+    if (this.mobMeshes.has(mob.id)) return;
+    const mesh = createMobMesh(mob.kind);
+    this.mobMeshes.set(mob.id, mesh);
+    this.scene.add(mesh);
+  }
+
+  private updateMobsAndDrops(dt: number): void {
+    for (const mob of this.mobs) {
+      if (mob.dead) continue;
+      updateMob(this.world, mob, dt);
+      this.ensureMobMesh(mob);
+      const mesh = this.mobMeshes.get(mob.id);
+      if (mesh) syncMobMesh(mesh, mob);
+    }
+
+    // Remove dead mob meshes
+    for (const mob of this.mobs) {
+      if (!mob.dead) continue;
+      const mesh = this.mobMeshes.get(mob.id);
+      if (mesh) {
+        this.scene.remove(mesh);
+        this.mobMeshes.delete(mob.id);
+      }
+    }
+    this.mobs = this.mobs.filter((m) => !m.dead);
+
+    for (const drop of this.drops) {
+      updateDrop(this.world, drop, dt);
+      let mesh = this.dropMeshes.get(drop.id);
+      if (!mesh) {
+        mesh = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.28, 0.28), this.dropMaterial.clone());
+        const color =
+          drop.item.kind === 'loot'
+            ? drop.item.id === 'feather'
+              ? 0xf0f0f5
+              : drop.item.id === 'leather'
+                ? 0x965a32
+                : drop.item.id === 'wool'
+                  ? 0xececf0
+                  : 0xd07070
+            : 0xffffff;
+        (mesh.material as THREE.MeshLambertMaterial).color.setHex(color);
+        this.dropMeshes.set(drop.id, mesh);
+        this.scene.add(mesh);
+      }
+      mesh.position.set(drop.x, drop.y + 0.15 + Math.sin(drop.age * 4) * 0.05, drop.z);
+      mesh.rotation.y = drop.age * 2;
+    }
+
+    // Pickup
+    if (this.locked && !this.inventoryOpen) {
+      const remaining: DropEntity[] = [];
+      for (const drop of this.drops) {
+        const dx = drop.x - this.player.x;
+        const dy = drop.y - (this.player.y + 0.9);
+        const dz = drop.z - this.player.z;
+        if (dx * dx + dy * dy + dz * dz < 1.6 * 1.6) {
+          if (giveItem(this.hotbar, drop.item)) {
+            this.pickupMessage = `+ ${itemName(drop.item)}`;
+            this.pickupMessageTimer = 2;
+            const mesh = this.dropMeshes.get(drop.id);
+            if (mesh) {
+              (mesh.material as THREE.Material).dispose();
+              mesh.geometry.dispose();
+              this.scene.remove(mesh);
+              this.dropMeshes.delete(drop.id);
+            }
+            continue;
+          }
+        }
+        // Despawn after 60s
+        if (drop.age > 60) {
+          const mesh = this.dropMeshes.get(drop.id);
+          if (mesh) {
+            (mesh.material as THREE.Material).dispose();
+            mesh.geometry.dispose();
+            this.scene.remove(mesh);
+            this.dropMeshes.delete(drop.id);
+          }
+          continue;
+        }
+        remaining.push(drop);
+      }
+      this.drops = remaining;
+    }
+  }
+
+  private findAimedMob(
+    eye: { x: number; y: number; z: number },
+    dir: { x: number; y: number; z: number },
+    maxDist: number,
+  ): { mob: Mob; dist: number } | null {
+    let best: { mob: Mob; dist: number } | null = null;
+    for (const mob of this.mobs) {
+      if (mob.dead) continue;
+      const d = rayHitMob(eye.x, eye.y, eye.z, dir.x, dir.y, dir.z, mob, maxDist);
+      if (d == null) continue;
+      if (!best || d < best.dist) best = { mob, dist: d };
+    }
+    if (!best) return null;
+    // Block occludes mob?
+    if (this.hit && this.hit.distance < best.dist) return null;
+    return best;
+  }
+
+  private tryAttackMob(): boolean {
+    if (this.attackCooldown > 0 || this.inventoryOpen || !this.locked) return false;
+    const eye = eyePosition(this.player);
+    const dir = lookDirection(this.player);
+    const aimed = this.findAimedMob(eye, dir, 4);
+    if (!aimed) return false;
+
+    const tool = getTool(this.getSelectedItem());
+    let dmg = 1;
+    if (tool?.kind === 'sword') dmg = 3 + Math.floor(tool.speed / 3);
+    else if (tool) dmg = 2;
+
+    const knockYaw = Math.atan2(dir.x, -dir.z);
+    const drops = damageMob(aimed.mob, dmg, knockYaw);
+    this.attackCooldown = 0.45;
+    this.swingTimer = 0.25;
+
+    if (drops) {
+      for (const item of drops) {
+        this.drops.push(createDrop(item, aimed.mob.x, aimed.mob.y + 0.5, aimed.mob.z));
+      }
+      this.pickupMessage = `${aimed.mob.kind} slain`;
+      this.pickupMessageTimer = 1.5;
+    }
+    return true;
+  }
+
+  private updateMining(dt: number, aimingMob: boolean): void {
     if (
       !this.mining ||
       !this.locked ||
       this.inventoryOpen ||
+      aimingMob ||
       !this.hit ||
       !isBreakable(this.hit.block)
     ) {
@@ -434,6 +612,7 @@ export class MinecraftGame {
       return;
     }
     if (e.button === 0) {
+      if (this.tryAttackMob()) return;
       this.mining = true;
       this.swingTimer = 0.2;
     }

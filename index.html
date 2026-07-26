@@ -17,6 +17,7 @@
 
     <div id="hud-top">
       <div class="chip"><span id="selected">Diamond Pickaxe</span> · <span id="fps">0 FPS</span></div>
+      <div id="pickup-toast" class="chip toast hidden"></div>
     </div>
 
     <div id="hotbar" role="toolbar" aria-label="Item hotbar"></div>
@@ -32,6 +33,7 @@
           <button type="button" data-tab="tools">Tools</button>
           <button type="button" data-tab="blocks">Blocks</button>
           <button type="button" data-tab="ores">Ores</button>
+          <button type="button" data-tab="food">Food</button>
         </div>
         <div id="inv-grid" class="inv-grid" role="list"></div>
         <p id="inv-hint" class="inv-hint">Click an item to pick it up · click a hotbar slot to place · E / Esc close</p>
@@ -47,7 +49,8 @@
         <button id="play" type="button">Click to play</button>
         <div class="controls">
           <div><code>W A S D</code> move · <code>Space</code> jump · <code>Shift</code> sprint</div>
-          <div><code>Hold LMB</code> mine · <code>RMB</code> place · <code>E</code> inventory</div>
+          <div><code>Hold LMB</code> mine · <code>LMB</code> attack mobs · <code>RMB</code> place</div>
+          <div><code>E</code> inventory · walk over drops to pick up meat &amp; loot</div>
           <div><code>1</code>–<code>9</code> hotbar · <code>Esc</code> release mouse</div>
         </div>
       </div>

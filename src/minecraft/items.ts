@@ -28,16 +28,19 @@ import {
   blockName,
   type BlockId,
 } from './blocks';
+import { ALL_LOOT, lootName, type LootId } from './loot';
 import { ALL_TOOLS, TOOLS, toolName, type ToolId } from './tools';
 
 export type HotbarItem =
   | { kind: 'block'; id: BlockId }
-  | { kind: 'tool'; id: ToolId };
+  | { kind: 'tool'; id: ToolId }
+  | { kind: 'loot'; id: LootId };
 
 export type HotbarSlot = HotbarItem | null;
 
 const blockItem = (id: BlockId): HotbarItem => ({ kind: 'block', id });
 const toolItem = (id: ToolId): HotbarItem => ({ kind: 'tool', id });
+const lootItem = (id: LootId): HotbarItem => ({ kind: 'loot', id });
 
 /** Every placeable / usable item in creative inventory. */
 export const ALL_ITEMS: HotbarItem[] = [
@@ -68,6 +71,7 @@ export const ALL_ITEMS: HotbarItem[] = [
   blockItem(EMERALD_BLOCK),
   blockItem(QUARTZ_BLOCK),
   blockItem(AMETHYST_BLOCK),
+  ...ALL_LOOT.map((l) => lootItem(l.id)),
 ];
 
 export const HOTBAR_SIZE = 9;
@@ -85,11 +89,12 @@ export const createDefaultHotbar = (): HotbarSlot[] => [
   blockItem(WOOD),
 ];
 
-export type InventoryTab = 'all' | 'tools' | 'blocks' | 'ores';
+export type InventoryTab = 'all' | 'tools' | 'blocks' | 'ores' | 'food';
 
 export const inventoryItemsForTab = (tab: InventoryTab): HotbarItem[] => {
   if (tab === 'all') return ALL_ITEMS;
   if (tab === 'tools') return ALL_ITEMS.filter((i) => i.kind === 'tool');
+  if (tab === 'food') return ALL_ITEMS.filter((i) => i.kind === 'loot');
   if (tab === 'ores') {
     return ALL_ITEMS.filter(
       (i) =>
@@ -116,25 +121,16 @@ export const inventoryItemsForTab = (tab: InventoryTab): HotbarItem[] => {
         ].includes(i.id),
     );
   }
-  // blocks — non-ore building blocks
   return ALL_ITEMS.filter(
     (i) =>
       i.kind === 'block' &&
-      [
-        GRASS,
-        DIRT,
-        STONE,
-        COBBLE,
-        WOOD,
-        PLANKS,
-        SAND,
-        LEAVES,
-      ].includes(i.id),
+      [GRASS, DIRT, STONE, COBBLE, WOOD, PLANKS, SAND, LEAVES].includes(i.id),
   );
 };
 
 export const itemName = (item: HotbarItem): string => {
   if (item.kind === 'tool') return toolName(item.id);
+  if (item.kind === 'loot') return lootName(item.id);
   return blockName(item.id);
 };
 
@@ -149,6 +145,15 @@ export const itemsEqual = (a: HotbarItem | null, b: HotbarItem | null): boolean 
   return a.id === b.id;
 };
 
-/** Serialize key for DOM data attributes / maps. */
-export const itemKey = (item: HotbarItem): string =>
-  item.kind === 'tool' ? `tool:${item.id}` : `block:${item.id}`;
+export const itemKey = (item: HotbarItem): string => `${item.kind}:${item.id}`;
+
+/** Put an item into the first empty hotbar slot. Returns false if full. */
+export const giveItem = (hotbar: HotbarSlot[], item: HotbarItem): boolean => {
+  for (let i = 0; i < hotbar.length; i++) {
+    if (hotbar[i] == null) {
+      hotbar[i] = item;
+      return true;
+    }
+  }
+  return false;
+};

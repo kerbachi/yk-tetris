@@ -18,6 +18,7 @@ const playBtn = document.getElementById('play')!;
 const hotbarEl = document.getElementById('hotbar')!;
 const fpsEl = document.getElementById('fps')!;
 const selectedEl = document.getElementById('selected')!;
+const pickupToast = document.getElementById('pickup-toast')!;
 const heldEl = document.getElementById('held-item') as HTMLImageElement;
 const breakBar = document.getElementById('break-bar')!;
 const breakFill = document.getElementById('break-fill')!;
@@ -189,6 +190,13 @@ const onHud = (hud: HudSnapshot): void => {
   } else {
     breakBar.classList.add('hidden');
     breakFill.style.width = '0%';
+  }
+
+  if (hud.pickupMessage) {
+    pickupToast.textContent = hud.pickupMessage;
+    pickupToast.classList.remove('hidden');
+  } else {
+    pickupToast.classList.add('hidden');
   }
 
   if (hud.inventoryOpen) {

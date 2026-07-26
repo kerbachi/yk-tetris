@@ -4,6 +4,7 @@
 
 import { BLOCKS } from './blocks';
 import type { HotbarItem } from './items';
+import { lootIconDataUrl } from './loot';
 import { ATLAS_COLS, TILE_SIZE } from './textures';
 import { TOOLS } from './tools';
 import { toolIconDataUrl } from './toolIcons';
@@ -170,6 +171,7 @@ export const itemIconDataUrl = (
   size = 32,
 ): string => {
   if (item.kind === 'tool') return toolIconDataUrl(TOOLS[item.id]!, size);
+  if (item.kind === 'loot') return lootIconDataUrl(item.id, size);
   const def = BLOCKS[item.id]!;
   return isometricBlockIcon(atlas, def.textures[0]!, def.textures[1]!, size);
 };

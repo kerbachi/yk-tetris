@@ -103,9 +103,11 @@ First-person voxel sandbox:
 
 - **Click to play** locks the mouse
 - **W/A/S/D** move, **Space** jump, **Shift** sprint
-- **Hold LMB** mine (tools speed it up), **RMB** place blocks
+- **Hold LMB** mine (tools speed it up), **LMB** attack mobs, **RMB** place blocks
 - **E** open inventory (drag items onto the 9-slot hotbar), **1–9** / scroll
   hotbar, **Esc** close inventory / release mouse
+- Farm animals (pigs, cows, chickens, sheep) drop meat and loot when killed —
+  walk over drops to pick them up
 
 ## Desktop binaries (Windows, Linux & macOS)
 
