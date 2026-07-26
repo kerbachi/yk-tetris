@@ -1,4 +1,8 @@
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
+
+const root = dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   // Relative base so the built app loads over file:// inside Electron.
@@ -10,6 +14,14 @@ export default defineConfig({
   },
   preview: {
     host: true,
+  },
+  build: {
+    rollupOptions: {
+      input: {
+        main: resolve(root, 'index.html'),
+        minecraft: resolve(root, 'minecraft.html'),
+      },
+    },
   },
   test: {
     globals: true,
