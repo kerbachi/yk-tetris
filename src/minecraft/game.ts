@@ -10,6 +10,7 @@ import {
 } from './items';
 import { meshChunk } from './mesher';
 import {
+  MOB_DEFS,
   createDrop,
   damageMob,
   rayHitMob,
@@ -399,6 +400,7 @@ export class MinecraftGame {
     eye: { x: number; y: number; z: number },
     dir: { x: number; y: number; z: number },
     maxDist: number,
+    blockDist: number | null = null,
   ): { mob: Mob; dist: number } | null {
     let best: { mob: Mob; dist: number } | null = null;
     for (const mob of this.mobs) {
@@ -407,9 +409,29 @@ export class MinecraftGame {
       if (d == null) continue;
       if (!best || d < best.dist) best = { mob, dist: d };
     }
+    if (!best) {
+      // Forgiving melee: closest mob roughly in front of the crosshair
+      let fallback: { mob: Mob; dist: number; score: number } | null = null;
+      for (const mob of this.mobs) {
+        if (mob.dead) continue;
+        const def = MOB_DEFS[mob.kind];
+        const mx = mob.x - eye.x;
+        const my = mob.y + def.height * 0.5 - eye.y;
+        const mz = mob.z - eye.z;
+        const dist = Math.hypot(mx, my, mz);
+        if (dist > Math.min(3.6, maxDist) || dist < 0.2) continue;
+        const inv = 1 / dist;
+        const dot = mx * inv * dir.x + my * inv * dir.y + mz * inv * dir.z;
+        if (dot < 0.82) continue; // ~35° cone
+        const score = dot / dist;
+        if (!fallback || score > fallback.score) fallback = { mob, dist, score };
+      }
+      best = fallback ? { mob: fallback.mob, dist: fallback.dist } : null;
+    }
     if (!best) return null;
-    // Block occludes mob?
-    if (this.hit && this.hit.distance < best.dist) return null;
+    // Block must clearly be in front of the mob to occlude (ignore grazing ground hits)
+    const occludeAt = blockDist ?? this.hit?.distance ?? null;
+    if (occludeAt != null && occludeAt + 0.35 < best.dist) return null;
     return best;
   }
 
@@ -417,25 +439,29 @@ export class MinecraftGame {
     if (this.attackCooldown > 0 || this.inventoryOpen || !this.locked) return false;
     const eye = eyePosition(this.player);
     const dir = lookDirection(this.player);
-    const aimed = this.findAimedMob(eye, dir, 4);
+    const block = raycast(this.world, eye.x, eye.y, eye.z, dir.x, dir.y, dir.z, 5);
+    const aimed = this.findAimedMob(eye, dir, 5, block?.distance ?? null);
     if (!aimed) return false;
 
     const tool = getTool(this.getSelectedItem());
     let dmg = 1;
-    if (tool?.kind === 'sword') dmg = 3 + Math.floor(tool.speed / 3);
+    if (tool?.kind === 'sword') dmg = 4 + Math.floor(tool.speed / 2);
     else if (tool) dmg = 2;
 
     const knockYaw = Math.atan2(dir.x, -dir.z);
     const drops = damageMob(aimed.mob, dmg, knockYaw);
-    this.attackCooldown = 0.45;
+    this.attackCooldown = 0.35;
     this.swingTimer = 0.25;
 
     if (drops) {
       for (const item of drops) {
         this.drops.push(createDrop(item, aimed.mob.x, aimed.mob.y + 0.5, aimed.mob.z));
       }
-      this.pickupMessage = `${aimed.mob.kind} slain`;
+      this.pickupMessage = `${MOB_DEFS[aimed.mob.kind].name} slain`;
       this.pickupMessageTimer = 1.5;
+    } else {
+      this.pickupMessage = `${MOB_DEFS[aimed.mob.kind].name} hit`;
+      this.pickupMessageTimer = 0.7;
     }
     return true;
   }
