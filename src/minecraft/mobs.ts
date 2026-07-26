@@ -1,4 +1,4 @@
-import { GRASS, isSolid } from './blocks';
+import { DIRT, GRASS, SAND, isSolid } from './blocks';
 import type { HotbarItem } from './items';
 import { hash2 } from './noise';
 import { World, WORLD_D, WORLD_H, WORLD_W, SEA_LEVEL } from './world';
@@ -149,21 +149,59 @@ const collidesMob = (
   return false;
 };
 
+const surfaceSpawn = (
+  world: World,
+  x: number,
+  z: number,
+): { x: number; y: number; z: number } | null => {
+  const ix = Math.min(WORLD_W - 2, Math.max(1, Math.floor(x)));
+  const iz = Math.min(WORLD_D - 2, Math.max(1, Math.floor(z)));
+  let y = WORLD_H - 1;
+  while (y > 0 && !isSolid(world.get(ix, y, iz))) y--;
+  if (y <= 0 || y <= SEA_LEVEL) return null;
+  // Prefer grass but allow dirt/sand so nearby packs always appear
+  const ground = world.get(ix, y, iz);
+  if (ground !== GRASS && ground !== DIRT && ground !== SAND) return null;
+  return { x: ix + 0.5, y: y + 1.01, z: iz + 0.5 };
+};
+
 export const spawnMobs = (world: World, seed: number): Mob[] => {
   const mobs: Mob[] = [];
   const kinds: MobKind[] = ['pig', 'cow', 'chicken', 'sheep'];
+
+  // Guaranteed pack near world-center spawn so players always see animals.
+  const spawn = world.spawnPoint();
+  const near: { kind: MobKind; dx: number; dz: number }[] = [
+    { kind: 'pig', dx: 3, dz: 2 },
+    { kind: 'pig', dx: 4, dz: -1 },
+    { kind: 'cow', dx: -3, dz: 3 },
+    { kind: 'cow', dx: -4, dz: 1 },
+    { kind: 'sheep', dx: 2, dz: 5 },
+    { kind: 'sheep', dx: -2, dz: 4 },
+    { kind: 'chicken', dx: 5, dz: 3 },
+    { kind: 'chicken', dx: 6, dz: 0 },
+    { kind: 'pig', dx: -5, dz: -2 },
+    { kind: 'cow', dx: 1, dz: -4 },
+  ];
+  for (const n of near) {
+    const pos = surfaceSpawn(world, spawn.x + n.dx, spawn.z + n.dz);
+    if (pos) mobs.push(createMob(n.kind, pos.x, pos.y, pos.z));
+  }
+
   let attempts = 0;
   let placed = 0;
-  while (placed < 28 && attempts < 400) {
+  while (placed < 24 && attempts < 500) {
     attempts++;
     const x = 4 + Math.floor(hash2(attempts, seed, 701) * (WORLD_W - 8));
     const z = 4 + Math.floor(hash2(attempts, seed, 702) * (WORLD_D - 8));
-    let y = WORLD_H - 1;
-    while (y > 0 && !isSolid(world.get(x, y, z))) y--;
-    if (world.get(x, y, z) !== GRASS) continue;
-    if (y <= SEA_LEVEL) continue;
+    const pos = surfaceSpawn(world, x, z);
+    if (!pos) continue;
+    // Keep random spawns on grass for a natural look
+    if (world.get(Math.floor(pos.x), Math.floor(pos.y) - 1, Math.floor(pos.z)) !== GRASS) {
+      continue;
+    }
     const kind = kinds[Math.floor(hash2(attempts, seed, 703) * kinds.length)]!;
-    mobs.push(createMob(kind, x + 0.5, y + 1.01, z + 0.5));
+    mobs.push(createMob(kind, pos.x, pos.y, pos.z));
     placed++;
   }
   return mobs;

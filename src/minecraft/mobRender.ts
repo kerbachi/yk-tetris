@@ -1,21 +1,9 @@
 import * as THREE from 'three';
 import { MOB_DEFS, type Mob, type MobKind } from './mobs';
 
-const geomCache = {
-  box: new THREE.BoxGeometry(1, 1, 1),
-};
-
-const matCache = new Map<string, THREE.MeshLambertMaterial>();
-
-const mat = (r: number, g: number, b: number): THREE.MeshLambertMaterial => {
-  const key = `${r},${g},${b}`;
-  let m = matCache.get(key);
-  if (!m) {
-    m = new THREE.MeshLambertMaterial({ color: new THREE.Color(r, g, b) });
-    matCache.set(key, m);
-  }
-  return m;
-};
+/** Fresh material per box so hurt-flash emissive doesn't affect other parts. */
+const mat = (r: number, g: number, b: number): THREE.MeshLambertMaterial =>
+  new THREE.MeshLambertMaterial({ color: new THREE.Color(r, g, b) });
 
 const box = (
   parent: THREE.Group,
@@ -27,9 +15,10 @@ const box = (
   z: number,
   color: [number, number, number],
 ): THREE.Mesh => {
-  const mesh = new THREE.Mesh(geomCache.box, mat(color[0], color[1], color[2]));
-  mesh.scale.set(w, h, d);
+  // Unique geometry per box so scaled bounds / culling stay correct.
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color[0], color[1], color[2]));
   mesh.position.set(x, y, z);
+  mesh.frustumCulled = false;
   parent.add(mesh);
   return mesh;
 };
@@ -38,6 +27,7 @@ export const createMobMesh = (kind: MobKind): THREE.Group => {
   const def = MOB_DEFS[kind];
   const g = new THREE.Group();
   g.userData.kind = kind;
+  g.frustumCulled = false;
 
   if (kind === 'pig') {
     box(g, 0.85, 0.55, 0.55, 0, 0.45, 0, def.color); // body

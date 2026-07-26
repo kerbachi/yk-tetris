@@ -299,8 +299,19 @@ export class MinecraftGame {
   private ensureMobMesh(mob: Mob): void {
     if (this.mobMeshes.has(mob.id)) return;
     const mesh = createMobMesh(mob.kind);
+    syncMobMesh(mesh, mob);
     this.mobMeshes.set(mob.id, mesh);
     this.scene.add(mesh);
+  }
+
+  private disposeMobMesh(mesh: THREE.Group): void {
+    mesh.traverse((obj) => {
+      if (obj instanceof THREE.Mesh) {
+        obj.geometry.dispose();
+        if (obj.material instanceof THREE.Material) obj.material.dispose();
+      }
+    });
+    this.scene.remove(mesh);
   }
 
   private updateMobsAndDrops(dt: number): void {
@@ -317,7 +328,7 @@ export class MinecraftGame {
       if (!mob.dead) continue;
       const mesh = this.mobMeshes.get(mob.id);
       if (mesh) {
-        this.scene.remove(mesh);
+        this.disposeMobMesh(mesh);
         this.mobMeshes.delete(mob.id);
       }
     }
