@@ -66,7 +66,7 @@ export const createBackground = (canvas: HTMLCanvasElement): Background => {
     ctx.save();
     ctx.translate(block.x, block.y);
     ctx.rotate(block.angle);
-    ctx.globalAlpha = defeated ? Math.min(0.6, block.alpha * 2.4) : block.alpha;
+    ctx.globalAlpha = defeated ? Math.min(0.92, block.alpha * 3.6) : block.alpha;
     ctx.fillStyle = color;
     const offsetX = -(cols * block.cell) / 2;
     const offsetY = -(rows * block.cell) / 2;
