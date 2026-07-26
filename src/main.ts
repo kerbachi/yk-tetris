@@ -37,6 +37,7 @@ const playAgainBtn = document.getElementById('play-again')!;
 const difficultyGroups = Array.from(
   document.querySelectorAll<HTMLElement>('.difficulty'),
 );
+const difficultyPanel = document.getElementById('difficulty-panel')!;
 
 let selectedDifficulty = 1;
 
@@ -63,6 +64,8 @@ const showGameOver = (game: GameState) => {
   finalLinesEl.textContent = String(game.lines);
   finalLevelEl.textContent = String(game.level);
   modalEl.classList.remove('hidden');
+  // Bring the side-panel difficulty selector back once the game ends.
+  difficultyPanel.classList.remove('hidden');
 };
 
 const hideGameOver = () => modalEl.classList.add('hidden');
@@ -178,6 +181,8 @@ const startGame = () => {
   lastTick = performance.now();
   statusEl.textContent = 'Playing';
   hideGameOver();
+  // Hide the side-panel difficulty selector while a game is in progress.
+  difficultyPanel.classList.add('hidden');
   cancelAnimationFrame(rafId);
   rafId = requestAnimationFrame(loop);
 };
