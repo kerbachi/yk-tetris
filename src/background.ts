@@ -15,11 +15,21 @@ interface FloatingBlock {
   alpha: number;
 }
 
-// Wrap a coordinate around the screen edges so blocks drift endlessly.
-export const wrap = (value: number, max: number, margin: number): number => {
-  if (value < -margin) return max + margin;
-  if (value > max + margin) return -margin;
-  return value;
+// Bounce a coordinate off the [0, max] edges, reversing velocity so the block
+// (kept `radius` away from the edge) stays fully on screen.
+export const bounce = (
+  value: number,
+  velocity: number,
+  max: number,
+  radius: number,
+): { value: number; velocity: number } => {
+  const min = radius;
+  const upper = max - radius;
+  // Block is larger than the viewport dimension: keep it centered.
+  if (upper <= min) return { value: max / 2, velocity };
+  if (value < min) return { value: min, velocity: Math.abs(velocity) };
+  if (value > upper) return { value: upper, velocity: -Math.abs(velocity) };
+  return { value, velocity };
 };
 
 export interface Background {
@@ -90,9 +100,14 @@ export const createBackground = (canvas: HTMLCanvasElement): Background => {
       block.x += block.vx;
       block.y += block.vy;
       block.angle += block.angularVelocity;
-      const margin = Math.max(matrixWidth(block), matrixHeight(block));
-      block.x = wrap(block.x, canvas.width, margin);
-      block.y = wrap(block.y, canvas.height, margin);
+      // Bounce off the edges (reverse velocity) instead of wrapping around.
+      const radius = Math.max(matrixWidth(block), matrixHeight(block)) / 2;
+      const bx = bounce(block.x, block.vx, canvas.width, radius);
+      block.x = bx.value;
+      block.vx = bx.velocity;
+      const by = bounce(block.y, block.vy, canvas.height, radius);
+      block.y = by.value;
+      block.vy = by.velocity;
       drawBlock(block);
     }
     requestAnimationFrame(step);
