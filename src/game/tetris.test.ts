@@ -188,9 +188,14 @@ describe('drop interval', () => {
     expect(dropInterval(5)).toBeLessThan(dropInterval(2));
   });
 
+  it('makes the hardest difficulty fall much faster than the easiest', () => {
+    // Difficulty 5 should be at least twice as fast (half the interval) as 1.
+    expect(dropInterval(5)).toBeLessThanOrEqual(dropInterval(1) / 2);
+  });
+
   it('never drops below the floor', () => {
-    expect(dropInterval(100)).toBe(150);
-    expect(dropInterval(50)).toBeGreaterThanOrEqual(150);
+    expect(dropInterval(100)).toBe(90);
+    expect(dropInterval(50)).toBeGreaterThanOrEqual(90);
   });
 });
 

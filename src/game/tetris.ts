@@ -168,7 +168,9 @@ export const hardDrop = (state: GameState, rng: () => number = Math.random): Gam
 };
 
 // Milliseconds between gravity ticks for the current level.
-// Level 1 stays gentle (1000ms); each level shaves 120ms so the difficulty
-// 1-5 range spans a clear gradient, with a floor so it stays playable.
+// Level 1 stays gentle (1000ms); each level shaves 175ms so higher difficulties
+// (and higher levels reached by clearing lines) fall much faster, down to a
+// floor that stays just playable.
+// Difficulty 1-5 -> 1000, 825, 650, 475, 300 ms per row.
 export const dropInterval = (level: number): number =>
-  Math.max(150, 1000 - (level - 1) * 120);
+  Math.max(90, 1000 - (level - 1) * 175);
