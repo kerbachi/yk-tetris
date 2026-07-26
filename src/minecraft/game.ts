@@ -358,14 +358,21 @@ export class MinecraftGame {
       mesh.rotation.y = drop.age * 2;
     }
 
-    // Pickup
+    // Pickup — generous radius + mild magnet so meat is easy to collect
     if (this.locked && !this.inventoryOpen) {
       const remaining: DropEntity[] = [];
       for (const drop of this.drops) {
-        const dx = drop.x - this.player.x;
-        const dy = drop.y - (this.player.y + 0.9);
-        const dz = drop.z - this.player.z;
-        if (dx * dx + dy * dy + dz * dz < 1.6 * 1.6) {
+        const dx = this.player.x - drop.x;
+        const dy = this.player.y + 0.9 - drop.y;
+        const dz = this.player.z - drop.z;
+        const distSq = dx * dx + dy * dy + dz * dz;
+        if (distSq < 3.2 * 3.2 && distSq > 0.05) {
+          const pull = Math.min(8 * dt, 0.35);
+          drop.x += dx * pull;
+          drop.y += dy * pull * 0.5;
+          drop.z += dz * pull;
+        }
+        if (distSq < 2.4 * 2.4) {
           if (giveItem(this.hotbar, drop.item)) {
             this.pickupMessage = `+ ${itemName(drop.item)}`;
             this.pickupMessageTimer = 2;
@@ -378,6 +385,8 @@ export class MinecraftGame {
             }
             continue;
           }
+          this.pickupMessage = 'Hotbar full';
+          this.pickupMessageTimer = 1.2;
         }
         // Despawn after 60s
         if (drop.age > 60) {

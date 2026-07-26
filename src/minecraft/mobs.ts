@@ -24,9 +24,8 @@ export const MOB_DEFS: Record<MobKind, MobDef> = {
     kind: 'pig',
     name: 'Pig',
     health: 10,
-    // Hitboxes are a bit larger than the mesh so head/legs stay clickable when facing you.
-    width: 1.15,
-    height: 1.05,
+    width: 0.9,
+    height: 0.9,
     speed: 1.6,
     color: [0.92, 0.55, 0.55],
     accent: [0.85, 0.4, 0.4],
@@ -36,8 +35,8 @@ export const MOB_DEFS: Record<MobKind, MobDef> = {
     kind: 'cow',
     name: 'Cow',
     health: 10,
-    width: 1.25,
-    height: 1.45,
+    width: 0.95,
+    height: 1.3,
     speed: 1.4,
     color: [0.45, 0.3, 0.18],
     accent: [0.92, 0.92, 0.9],
@@ -50,8 +49,8 @@ export const MOB_DEFS: Record<MobKind, MobDef> = {
     kind: 'chicken',
     name: 'Chicken',
     health: 4,
-    width: 0.7,
-    height: 0.85,
+    width: 0.45,
+    height: 0.7,
     speed: 2.0,
     color: [0.95, 0.95, 0.95],
     accent: [0.95, 0.75, 0.2],
@@ -64,8 +63,8 @@ export const MOB_DEFS: Record<MobKind, MobDef> = {
     kind: 'sheep',
     name: 'Sheep',
     health: 8,
-    width: 1.2,
-    height: 1.3,
+    width: 0.9,
+    height: 1.15,
     speed: 1.5,
     color: [0.93, 0.93, 0.95],
     accent: [0.25, 0.22, 0.2],
@@ -282,16 +281,18 @@ export const updateMob = (world: World, mob: Mob, dt: number): void => {
   }
 };
 
+/** Slightly padded AABB for attacks so heads/rotated meshes stay clickable. */
 export const mobAabb = (
   mob: Mob,
 ): { minX: number; maxX: number; minY: number; maxY: number; minZ: number; maxZ: number } => {
   const def = MOB_DEFS[mob.kind];
-  const hw = def.width / 2;
+  const pad = 0.22;
+  const hw = def.width / 2 + pad;
   return {
     minX: mob.x - hw,
     maxX: mob.x + hw,
     minY: mob.y,
-    maxY: mob.y + def.height,
+    maxY: mob.y + def.height + pad * 0.5,
     minZ: mob.z - hw,
     maxZ: mob.z + hw,
   };
@@ -371,9 +372,18 @@ export const updateDrop = (world: World, drop: DropEntity, dt: number): void => 
   drop.age += dt;
   drop.vy -= GRAVITY * dt;
   drop.y += drop.vy * dt;
-  const gy = Math.floor(drop.y);
-  if (isSolid(world.get(Math.floor(drop.x), gy, Math.floor(drop.z))) && drop.vy <= 0) {
-    drop.y = gy + 1.05;
-    drop.vy = 0;
+  const ix = Math.floor(drop.x);
+  const iz = Math.floor(drop.z);
+  // Snap onto the highest solid at/below the drop so items don't sink into holes.
+  if (drop.vy <= 0) {
+    let gy = Math.min(WORLD_H - 1, Math.floor(drop.y));
+    while (gy > 0 && !isSolid(world.get(ix, gy, iz))) gy--;
+    if (isSolid(world.get(ix, gy, iz)) && drop.y <= gy + 1.05) {
+      drop.y = gy + 1.05;
+      drop.vy = 0;
+    }
+  }
+  if (drop.y < -2) {
+    drop.age = 999;
   }
 };

@@ -85,8 +85,9 @@ export const createDefaultHotbar = (): HotbarSlot[] => [
   blockItem(GRASS),
   blockItem(DIRT),
   blockItem(STONE),
-  blockItem(COBBLE),
-  blockItem(WOOD),
+  // Keep empty slots so mob drops (meat, wool, …) can be picked up.
+  null,
+  null,
 ];
 
 export type InventoryTab = 'all' | 'tools' | 'blocks' | 'ores' | 'food';
