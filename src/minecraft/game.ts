@@ -1,6 +1,12 @@
 import * as THREE from 'three';
 import { isBreakable, isSolid, type BlockId } from './blocks';
-import { HOTBAR, HOTBAR_VISIBLE, getTool, itemName, type HotbarItem } from './items';
+import {
+  HOTBAR_SIZE,
+  createDefaultHotbar,
+  getTool,
+  itemName,
+  type HotbarSlot,
+} from './items';
 import { meshChunk } from './mesher';
 import {
   createPlayer,
@@ -18,9 +24,11 @@ import { World, chunkKey } from './world';
 export interface HudSnapshot {
   selected: number;
   itemName: string;
-  item: HotbarItem;
+  item: HotbarSlot;
+  hotbar: HotbarSlot[];
   fps: number;
   locked: boolean;
+  inventoryOpen: boolean;
   miningProgress: number;
   swinging: boolean;
 }
@@ -48,7 +56,10 @@ export class MinecraftGame {
   };
 
   private selected = 0;
+  private hotbar: HotbarSlot[] = createDefaultHotbar();
   private locked = false;
+  private playing = false;
+  private inventoryOpen = false;
   private running = false;
   private last = 0;
   private frames = 0;
@@ -142,12 +153,51 @@ export class MinecraftGame {
     this.renderer.domElement.remove();
   }
 
-  getSelectedItem(): HotbarItem {
-    return HOTBAR[this.selected] ?? HOTBAR[0]!;
+  getSelectedItem(): HotbarSlot {
+    return this.hotbar[this.selected] ?? null;
+  }
+
+  getHotbar(): HotbarSlot[] {
+    return this.hotbar;
+  }
+
+  setHotbarSlot(index: number, item: HotbarSlot): void {
+    if (index < 0 || index >= HOTBAR_SIZE) return;
+    this.hotbar[index] = item;
+  }
+
+  isInventoryOpen(): boolean {
+    return this.inventoryOpen;
+  }
+
+  openInventory(): void {
+    if (this.inventoryOpen) return;
+    this.inventoryOpen = true;
+    this.mining = false;
+    this.resetMining();
+    // Clear movement so the player doesn't keep walking while the menu is open.
+    this.input.forward = false;
+    this.input.back = false;
+    this.input.left = false;
+    this.input.right = false;
+    this.input.jump = false;
+    this.input.sprint = false;
+    if (document.pointerLockElement) document.exitPointerLock();
+  }
+
+  closeInventory(relock = false): void {
+    if (!this.inventoryOpen) return;
+    this.inventoryOpen = false;
+    if (relock) this.renderer.domElement.requestPointerLock();
+  }
+
+  toggleInventory(): void {
+    if (this.inventoryOpen) this.closeInventory(true);
+    else this.openInventory();
   }
 
   private tick(dt: number): void {
-    if (this.locked) {
+    if (this.locked && !this.inventoryOpen) {
       updatePlayer(this.world, this.player, this.input, dt);
     }
 
@@ -156,9 +206,10 @@ export class MinecraftGame {
     this.camera.position.set(eye.x, eye.y, eye.z);
     this.camera.lookAt(eye.x + dir.x, eye.y + dir.y, eye.z + dir.z);
 
-    this.hit = this.locked
-      ? raycast(this.world, eye.x, eye.y, eye.z, dir.x, dir.y, dir.z, 6)
-      : null;
+    this.hit =
+      this.locked && !this.inventoryOpen
+        ? raycast(this.world, eye.x, eye.y, eye.z, dir.x, dir.y, dir.z, 6)
+        : null;
 
     this.updateMining(dt);
 
@@ -190,17 +241,25 @@ export class MinecraftGame {
     const item = this.getSelectedItem();
     this.onHud({
       selected: this.selected,
-      itemName: itemName(item),
+      itemName: item ? itemName(item) : 'Hand',
       item,
+      hotbar: [...this.hotbar],
       fps: this.fps,
       locked: this.locked,
+      inventoryOpen: this.inventoryOpen,
       miningProgress: this.mineProgress,
       swinging: this.swingTimer > 0,
     });
   }
 
   private updateMining(dt: number): void {
-    if (!this.mining || !this.locked || !this.hit || !isBreakable(this.hit.block)) {
+    if (
+      !this.mining ||
+      !this.locked ||
+      this.inventoryOpen ||
+      !this.hit ||
+      !isBreakable(this.hit.block)
+    ) {
       this.resetMining();
       return;
     }
@@ -233,21 +292,13 @@ export class MinecraftGame {
   }
 
   selectSlot(index: number): void {
-    if (index < 0 || index >= HOTBAR.length) return;
+    if (index < 0 || index >= HOTBAR_SIZE) return;
     this.selected = index;
     this.resetMining();
   }
 
-  /** First index of the 9-slot window shown in the HUD. */
-  hotbarWindowStart(): number {
-    if (HOTBAR.length <= HOTBAR_VISIBLE) return 0;
-    const maxStart = HOTBAR.length - HOTBAR_VISIBLE;
-    return Math.max(0, Math.min(maxStart, this.selected - Math.floor(HOTBAR_VISIBLE / 2)));
-  }
-
   cycleHotbar(delta: number): void {
-    if (HOTBAR.length === 0) return;
-    this.selected = (this.selected + delta + HOTBAR.length) % HOTBAR.length;
+    this.selected = (this.selected + delta + HOTBAR_SIZE) % HOTBAR_SIZE;
     this.resetMining();
   }
 
@@ -286,9 +337,9 @@ export class MinecraftGame {
   }
 
   private placeBlock(): void {
-    if (!this.hit) return;
+    if (!this.hit || this.inventoryOpen) return;
     const item = this.getSelectedItem();
-    if (item.kind !== 'block') return;
+    if (!item || item.kind !== 'block') return;
     const id: BlockId = item.id;
     const { px, py, pz } = this.hit;
     if (isSolid(this.world.get(px, py, pz))) return;
@@ -318,6 +369,28 @@ export class MinecraftGame {
   };
 
   private onKeyDown = (e: KeyboardEvent): void => {
+    if (e.code === 'KeyE') {
+      e.preventDefault();
+      if (this.playing || this.inventoryOpen) this.toggleInventory();
+      return;
+    }
+    if (e.code === 'Escape') {
+      if (this.inventoryOpen) {
+        e.preventDefault();
+        this.closeInventory(false);
+        return;
+      }
+      if (this.locked) document.exitPointerLock();
+      return;
+    }
+
+    if (this.inventoryOpen) {
+      if (e.code >= 'Digit1' && e.code <= 'Digit9') {
+        this.selectSlot(Number(e.code.slice(5)) - 1);
+      }
+      return;
+    }
+
     if (e.code === 'KeyW') this.input.forward = true;
     if (e.code === 'KeyS') this.input.back = true;
     if (e.code === 'KeyA') this.input.left = true;
@@ -328,17 +401,12 @@ export class MinecraftGame {
     }
     if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') this.input.sprint = true;
     if (e.code >= 'Digit1' && e.code <= 'Digit9') {
-      const slot = Number(e.code.slice(5)) - 1;
-      const index = this.hotbarWindowStart() + slot;
-      if (index < HOTBAR.length) this.selectSlot(index);
-    }
-    if (e.code === 'Escape' && this.locked) {
-      document.exitPointerLock();
+      this.selectSlot(Number(e.code.slice(5)) - 1);
     }
   };
 
   private onWheel = (e: WheelEvent): void => {
-    if (!this.locked) return;
+    if (!this.locked || this.inventoryOpen) return;
     e.preventDefault();
     this.cycleHotbar(e.deltaY > 0 ? 1 : -1);
   };
@@ -360,13 +428,13 @@ export class MinecraftGame {
   };
 
   private onMouseDown = (e: MouseEvent): void => {
+    if (this.inventoryOpen) return;
     if (!this.locked) {
       this.renderer.domElement.requestPointerLock();
       return;
     }
     if (e.button === 0) {
       this.mining = true;
-      // Instant punch for very soft blocks with correct tool still uses hold path
       this.swingTimer = 0.2;
     }
     if (e.button === 2) this.placeBlock();
@@ -385,6 +453,7 @@ export class MinecraftGame {
 
   private onPointerLockChange = (): void => {
     this.locked = document.pointerLockElement === this.renderer.domElement;
+    if (this.locked) this.playing = true;
     if (!this.locked) {
       this.mining = false;
       this.resetMining();

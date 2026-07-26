@@ -34,57 +34,14 @@ export type HotbarItem =
   | { kind: 'block'; id: BlockId }
   | { kind: 'tool'; id: ToolId };
 
+export type HotbarSlot = HotbarItem | null;
+
 const blockItem = (id: BlockId): HotbarItem => ({ kind: 'block', id });
 const toolItem = (id: ToolId): HotbarItem => ({ kind: 'tool', id });
 
-/** Creative hotbar — tools first, then building blocks / ores. */
-export const HOTBAR: HotbarItem[] = [
-  // Diamond set up front for convenience
-  toolItem('diamond_pickaxe'),
-  toolItem('diamond_axe'),
-  toolItem('diamond_shovel'),
-  toolItem('diamond_sword'),
-  toolItem('iron_pickaxe'),
-  toolItem('iron_axe'),
-  toolItem('iron_shovel'),
-  toolItem('iron_sword'),
-  toolItem('stone_pickaxe'),
-  toolItem('stone_axe'),
-  toolItem('stone_shovel'),
-  toolItem('wood_pickaxe'),
-  toolItem('wood_axe'),
-  toolItem('wood_shovel'),
-  toolItem('wood_sword'),
-  toolItem('gold_pickaxe'),
-  toolItem('gold_axe'),
-  toolItem('diamond_hoe'),
-  toolItem('iron_hoe'),
-  // Rest of the tool sets
-  ...ALL_TOOLS.filter(
-    (t) =>
-      ![
-        'diamond_pickaxe',
-        'diamond_axe',
-        'diamond_shovel',
-        'diamond_sword',
-        'diamond_hoe',
-        'iron_pickaxe',
-        'iron_axe',
-        'iron_shovel',
-        'iron_sword',
-        'iron_hoe',
-        'stone_pickaxe',
-        'stone_axe',
-        'stone_shovel',
-        'wood_pickaxe',
-        'wood_axe',
-        'wood_shovel',
-        'wood_sword',
-        'gold_pickaxe',
-        'gold_axe',
-      ].includes(t.id),
-  ).map((t) => toolItem(t.id)),
-  // Blocks
+/** Every placeable / usable item in creative inventory. */
+export const ALL_ITEMS: HotbarItem[] = [
+  ...ALL_TOOLS.map((t) => toolItem(t.id)),
   blockItem(GRASS),
   blockItem(DIRT),
   blockItem(STONE),
@@ -113,14 +70,85 @@ export const HOTBAR: HotbarItem[] = [
   blockItem(AMETHYST_BLOCK),
 ];
 
-export const HOTBAR_VISIBLE = 9;
+export const HOTBAR_SIZE = 9;
+
+/** Starting hotbar loadout (Minecraft creative-style defaults). */
+export const createDefaultHotbar = (): HotbarSlot[] => [
+  toolItem('diamond_pickaxe'),
+  toolItem('diamond_axe'),
+  toolItem('diamond_shovel'),
+  toolItem('diamond_sword'),
+  blockItem(GRASS),
+  blockItem(DIRT),
+  blockItem(STONE),
+  blockItem(COBBLE),
+  blockItem(WOOD),
+];
+
+export type InventoryTab = 'all' | 'tools' | 'blocks' | 'ores';
+
+export const inventoryItemsForTab = (tab: InventoryTab): HotbarItem[] => {
+  if (tab === 'all') return ALL_ITEMS;
+  if (tab === 'tools') return ALL_ITEMS.filter((i) => i.kind === 'tool');
+  if (tab === 'ores') {
+    return ALL_ITEMS.filter(
+      (i) =>
+        i.kind === 'block' &&
+        [
+          COAL_ORE,
+          IRON_ORE,
+          COPPER_ORE,
+          GOLD_ORE,
+          REDSTONE_ORE,
+          LAPIS_ORE,
+          DIAMOND_ORE,
+          EMERALD_ORE,
+          COAL_BLOCK,
+          IRON_BLOCK,
+          COPPER_BLOCK,
+          GOLD_BLOCK,
+          REDSTONE_BLOCK,
+          LAPIS_BLOCK,
+          DIAMOND_BLOCK,
+          EMERALD_BLOCK,
+          QUARTZ_BLOCK,
+          AMETHYST_BLOCK,
+        ].includes(i.id),
+    );
+  }
+  // blocks — non-ore building blocks
+  return ALL_ITEMS.filter(
+    (i) =>
+      i.kind === 'block' &&
+      [
+        GRASS,
+        DIRT,
+        STONE,
+        COBBLE,
+        WOOD,
+        PLANKS,
+        SAND,
+        LEAVES,
+      ].includes(i.id),
+  );
+};
 
 export const itemName = (item: HotbarItem): string => {
   if (item.kind === 'tool') return toolName(item.id);
   return blockName(item.id);
 };
 
-export const getTool = (item: HotbarItem | undefined) => {
+export const getTool = (item: HotbarItem | null | undefined) => {
   if (!item || item.kind !== 'tool') return null;
   return TOOLS[item.id] ?? null;
 };
+
+export const itemsEqual = (a: HotbarItem | null, b: HotbarItem | null): boolean => {
+  if (!a || !b) return a === b;
+  if (a.kind !== b.kind) return false;
+  return a.id === b.id;
+};
+
+/** Serialize key for DOM data attributes / maps. */
+export const itemKey = (item: HotbarItem): string =>
+  item.kind === 'tool' ? `tool:${item.id}` : `block:${item.id}`;

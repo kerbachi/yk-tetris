@@ -103,8 +103,9 @@ First-person voxel sandbox:
 
 - **Click to play** locks the mouse
 - **W/A/S/D** move, **Space** jump, **Shift** sprint
-- **Hold LMB** mine (tools speed it up), **RMB** place blocks, **1–9** / scroll
-  hotbar (tools, ores & blocks), **Esc** release mouse
+- **Hold LMB** mine (tools speed it up), **RMB** place blocks
+- **E** open inventory (drag items onto the 9-slot hotbar), **1–9** / scroll
+  hotbar, **Esc** close inventory / release mouse
 
 ## Desktop binaries (Windows, Linux & macOS)
 

@@ -21,6 +21,25 @@
 
     <div id="hotbar" role="toolbar" aria-label="Item hotbar"></div>
 
+    <div id="inventory" class="hidden" role="dialog" aria-modal="true" aria-labelledby="inv-title">
+      <div class="inv-panel">
+        <header class="inv-header">
+          <h2 id="inv-title">Inventory</h2>
+          <button type="button" id="inv-close" aria-label="Close inventory">✕</button>
+        </header>
+        <div class="inv-tabs" role="tablist" aria-label="Item categories">
+          <button type="button" data-tab="all" class="active">All</button>
+          <button type="button" data-tab="tools">Tools</button>
+          <button type="button" data-tab="blocks">Blocks</button>
+          <button type="button" data-tab="ores">Ores</button>
+        </div>
+        <div id="inv-grid" class="inv-grid" role="list"></div>
+        <p id="inv-hint" class="inv-hint">Click an item to pick it up · click a hotbar slot to place · E / Esc close</p>
+        <div id="inv-hotbar" class="inv-hotbar" aria-label="Hotbar"></div>
+      </div>
+      <img id="inv-cursor" class="hidden" alt="" width="40" height="40" />
+    </div>
+
     <div id="overlay">
       <div class="overlay-card">
         <h1>yk-minecraft</h1>
@@ -28,7 +47,7 @@
         <button id="play" type="button">Click to play</button>
         <div class="controls">
           <div><code>W A S D</code> move · <code>Space</code> jump · <code>Shift</code> sprint</div>
-          <div><code>Hold LMB</code> mine · <code>RMB</code> place blocks · scroll tools</div>
+          <div><code>Hold LMB</code> mine · <code>RMB</code> place · <code>E</code> inventory</div>
           <div><code>1</code>–<code>9</code> hotbar · <code>Esc</code> release mouse</div>
         </div>
       </div>

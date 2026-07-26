@@ -20,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Tools** — wooden/stone/iron/gold/diamond pickaxe, axe, shovel, sword, and hoe
   with hold-to-mine speeds, correct-tool bonuses, harvest levels for hard ores,
   hotbar icons, and a first-person held-item view.
+- **Inventory (E)** — Minecraft-style creative inventory with tabs (All / Tools /
+  Blocks / Ores); pick up items and place them on the 9-slot hotbar.
 
 ### Changed
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DIAMOND_ORE, DIRT, LEAVES, STONE, WOOD } from './blocks';
-import { HOTBAR } from './items';
+import { ALL_ITEMS, HOTBAR_SIZE, createDefaultHotbar } from './items';
 import { TOOLS, isCorrectTool, mineDuration } from './tools';
 
 describe('tools', () => {
@@ -39,9 +39,12 @@ describe('tools', () => {
     );
   });
 
-  it('hotbar starts with tools then blocks', () => {
-    expect(HOTBAR[0]).toEqual({ kind: 'tool', id: 'diamond_pickaxe' });
-    expect(HOTBAR.some((i) => i.kind === 'block')).toBe(true);
-    expect(HOTBAR.filter((i) => i.kind === 'tool').length).toBe(25);
+  it('default hotbar is 9 slots and catalog includes tools + blocks', () => {
+    const hotbar = createDefaultHotbar();
+    expect(hotbar).toHaveLength(HOTBAR_SIZE);
+    expect(hotbar[0]).toEqual({ kind: 'tool', id: 'diamond_pickaxe' });
+    expect(ALL_ITEMS.some((i) => i.kind === 'tool')).toBe(true);
+    expect(ALL_ITEMS.some((i) => i.kind === 'block')).toBe(true);
+    expect(ALL_ITEMS.filter((i) => i.kind === 'tool')).toHaveLength(25);
   });
 });

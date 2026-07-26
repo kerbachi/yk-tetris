@@ -249,6 +249,178 @@ body {
   color: #d7f0a8;
 }
 
+/* —— Inventory (E) —— */
+#inventory {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.55);
+  cursor: default;
+}
+
+#inventory.hidden {
+  display: none;
+}
+
+body.inventory-open #crosshair,
+body.inventory-open #held-item,
+body.inventory-open #break-bar {
+  display: none !important;
+}
+
+.inv-panel {
+  width: min(560px, calc(100vw - 24px));
+  max-height: min(860px, calc(100vh - 24px));
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px 16px;
+  background: #c6c6c6;
+  border: 4px solid #373737;
+  box-shadow:
+    inset 2px 2px 0 #fff,
+    inset -2px -2px 0 #555,
+    0 8px 32px rgba(0, 0, 0, 0.45);
+  color: #202020;
+}
+
+.inv-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.inv-header h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+#inv-close {
+  appearance: none;
+  border: 2px solid #555;
+  background: #8b8b8b;
+  color: #111;
+  width: 32px;
+  height: 32px;
+  font-size: 1rem;
+  cursor: pointer;
+  line-height: 1;
+}
+
+#inv-close:hover {
+  background: #a0a0a0;
+}
+
+.inv-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.inv-tabs button {
+  appearance: none;
+  border: 2px solid #555;
+  background: #8b8b8b;
+  color: #111;
+  padding: 6px 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.inv-tabs button.active {
+  background: #d0d0d0;
+  border-color: #222;
+  box-shadow: inset 0 0 0 1px #fff;
+}
+
+.inv-grid {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  gap: 3px;
+  padding: 8px;
+  background: #8b8b8b;
+  border: 2px solid #373737;
+  box-shadow: inset 1px 1px 0 #555;
+  overflow-y: auto;
+  max-height: min(420px, 50vh);
+}
+
+.inv-cell {
+  appearance: none;
+  width: 100%;
+  aspect-ratio: 1;
+  border: 2px solid #373737;
+  background: #8b8b8b;
+  box-shadow: inset 1px 1px 0 #b0b0b0;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.inv-cell:hover {
+  outline: 2px solid #ffff55;
+  outline-offset: -2px;
+}
+
+.inv-cell .swatch {
+  width: 70%;
+  height: 70%;
+  background-size: cover;
+  image-rendering: pixelated;
+  border: none;
+}
+
+.inv-hint {
+  margin: 0;
+  font-size: 0.8rem;
+  opacity: 0.85;
+  min-height: 1.2em;
+}
+
+.inv-hotbar {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  padding: 8px;
+  background: #8b8b8b;
+  border: 2px solid #373737;
+}
+
+.inv-hotbar .slot {
+  background: #8b8b8b;
+  border-color: #373737;
+  box-shadow: inset 1px 1px 0 #b0b0b0;
+  cursor: pointer;
+}
+
+.inv-hotbar .slot.selected {
+  border-color: #fff;
+  box-shadow: inset 0 0 0 1px #fff, inset 1px 1px 0 #b0b0b0;
+}
+
+.inv-hotbar .key {
+  color: #111;
+}
+
+#inv-cursor {
+  position: fixed;
+  width: 40px;
+  height: 40px;
+  image-rendering: pixelated;
+  pointer-events: none;
+  z-index: 30;
+  filter: drop-shadow(1px 1px 0 rgba(0, 0, 0, 0.5));
+}
+
+#inv-cursor.hidden {
+  display: none;
+}
+
 @media (max-width: 640px) {
   .slot {
     width: 38px;
@@ -258,5 +430,9 @@ body {
   .slot .swatch {
     width: 22px;
     height: 22px;
+  }
+
+  .inv-grid {
+    grid-template-columns: repeat(6, 1fr);
   }
 }
