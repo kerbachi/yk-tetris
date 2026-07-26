@@ -78,6 +78,9 @@ export class MinecraftGame {
 
     this.atlasCanvas = createAtlasCanvas();
     this.atlasTexture = new THREE.CanvasTexture(this.atlasCanvas);
+    // Keep V=0 at the top of the canvas so tileUv() matches blit order.
+    // (Three's default flipY would sample the empty bottom row → black ground.)
+    this.atlasTexture.flipY = false;
     this.atlasTexture.magFilter = THREE.NearestFilter;
     this.atlasTexture.minFilter = THREE.NearestFilter;
     this.atlasTexture.generateMipmaps = false;

@@ -313,6 +313,13 @@ export const createAtlasCanvas = (): HTMLCanvasElement => {
     blitTile(atlas, tile, tileData);
   }
 
+  // Fill unused atlas slots so a bad UV never samples transparent black.
+  for (let tile = 12; tile < ATLAS_COLS * ATLAS_ROWS; tile++) {
+    const tileData = new Uint8ClampedArray(TILE_SIZE * TILE_SIZE * 4);
+    paintDirt(tileData);
+    blitTile(atlas, tile, tileData);
+  }
+
   ctx.putImageData(atlas, 0, 0);
   ctx.imageSmoothingEnabled = false;
   atlasCanvas = canvas;
