@@ -7,11 +7,11 @@ const devServerUrl = process.env.VITE_DEV_SERVER_URL;
 
 const createWindow = () => {
   const win = new BrowserWindow({
-    width: 520,
-    height: 780,
+    width: 1280,
+    height: 800,
     resizable: true,
-    backgroundColor: '#0f1020',
-    title: 'yk-tetris',
+    backgroundColor: '#1a2218',
+    title: 'yk-minecraft',
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,

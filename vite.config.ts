@@ -19,7 +19,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(root, 'index.html'),
-        minecraft: resolve(root, 'minecraft.html'),
+        tetris: resolve(root, 'tetris.html'),
       },
     },
   },

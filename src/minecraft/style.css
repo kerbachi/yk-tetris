@@ -73,40 +73,18 @@ body {
 #hud-top {
   position: fixed;
   top: 12px;
-  left: 12px;
   right: 12px;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 12px;
   z-index: 4;
   pointer-events: none;
 }
 
-#hud-top a,
-#hud-top .chip {
-  pointer-events: auto;
-}
-
 .chip {
+  pointer-events: auto;
   background: var(--mc-panel);
   border: 1px solid var(--mc-border);
   padding: 8px 12px;
   font-size: 0.9rem;
   letter-spacing: 0.02em;
-}
-
-#back-link {
-  color: var(--mc-text);
-  text-decoration: none;
-  background: var(--mc-panel);
-  border: 1px solid var(--mc-border);
-  padding: 8px 12px;
-}
-
-#back-link:hover {
-  border-color: var(--mc-accent);
-  color: var(--mc-accent);
 }
 
 #hotbar {

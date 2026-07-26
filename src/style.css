@@ -43,21 +43,6 @@ h1 {
   text-shadow: 0 0 12px rgba(98, 208, 255, 0.6);
 }
 
-.mode-links {
-  margin: -8px 0 18px;
-  font-size: 0.95rem;
-}
-
-.mode-links a {
-  color: var(--accent);
-  text-decoration: none;
-  border-bottom: 1px solid rgba(98, 208, 255, 0.35);
-}
-
-.mode-links a:hover {
-  border-bottom-color: var(--accent);
-}
-
 .layout {
   display: flex;
   gap: 24px;

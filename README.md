@@ -1,8 +1,8 @@
-# yk-tetris
+# yk-minecraft
 
-A browser-based Tetris game built with Vite, TypeScript, and the HTML5 Canvas.
-It also ships as a standalone desktop app for **Windows** and **Linux**, plus a
-bundled **web Minecraft-style voxel sandbox** (`minecraft.html`).
+A browser **Minecraft-style voxel sandbox** built with Vite, TypeScript, and
+Three.js. It also ships as a standalone desktop app for **Windows**, **Linux**,
+and **macOS**. (A separate Tetris page still lives at `tetris.html`.)
 
 ## Download & install
 
@@ -95,24 +95,11 @@ npm run build    # type-check with tsc and produce a production bundle in dist/
 npm run preview  # preview the production build
 ```
 
-Open **http://localhost:5173/minecraft.html** (or the link from the Tetris page)
-for the voxel sandbox.
+Open **http://localhost:5173/** for the voxel sandbox.
 
 ## How to play
 
-Pick a **Difficulty** (1–5) — this sets the starting level and fall speed; the
-level still increases every 10 cleared lines. Then click **Start / Restart**:
-
-- **←/→** move, **↑** rotate, **↓** soft drop
-- **Space** hard drop
-- **P** pause
-
-When the game ends, the Game Over dialog lets you change the difficulty and
-**Play Again**.
-
-### yk-minecraft (web)
-
-First-person voxel sandbox in the browser (Three.js):
+First-person voxel sandbox:
 
 - **Click to play** locks the mouse
 - **W/A/S/D** move, **Space** jump, **Shift** sprint
@@ -146,8 +133,5 @@ Notes:
 
 ## Project structure
 
-- `src/game/pieces.ts` — tetromino definitions, colors, rotation helper
-- `src/game/tetris.ts` — pure game logic (board, collision, movement, gravity, scoring)
-- `src/game/tetris.test.ts` — Vitest unit tests for the game logic
-- `src/main.ts` — Canvas rendering, input handling, and the game loop
-- `minecraft.html` / `src/minecraft/` — web voxel sandbox (world gen, meshing, FPS controls)
+- `index.html` / `src/minecraft/` — voxel sandbox (world gen, meshing, FPS controls)
+- `tetris.html` / `src/game/` / `src/main.ts` — optional legacy Tetris page
