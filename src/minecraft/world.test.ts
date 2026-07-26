@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { AIR, BEDROCK, GRASS, isSolid } from './blocks';
-import { WORLD_H, WORLD_W, World, inBounds } from './world';
+import {
+  AIR,
+  BEDROCK,
+  COAL_ORE,
+  DIAMOND_ORE,
+  GOLD_ORE,
+  GRASS,
+  IRON_ORE,
+  isSolid,
+} from './blocks';
+import { WORLD_D, WORLD_H, WORLD_W, World, inBounds } from './world';
 import { raycast } from './raycast';
 
 describe('world', () => {
@@ -32,6 +41,23 @@ describe('world', () => {
     expect(inBounds(-1, 0, 0)).toBe(false);
     expect(inBounds(WORLD_W, 0, 0)).toBe(false);
     expect(inBounds(0, WORLD_H, 0)).toBe(false);
+  });
+
+  it('scatters common mineral ores underground', () => {
+    const world = new World(42);
+    const counts = new Map<number, number>();
+    for (let y = 1; y < WORLD_H; y++) {
+      for (let z = 0; z < WORLD_D; z++) {
+        for (let x = 0; x < WORLD_W; x++) {
+          const id = world.get(x, y, z);
+          counts.set(id, (counts.get(id) ?? 0) + 1);
+        }
+      }
+    }
+    expect(counts.get(COAL_ORE) ?? 0).toBeGreaterThan(50);
+    expect(counts.get(IRON_ORE) ?? 0).toBeGreaterThan(30);
+    expect(counts.get(GOLD_ORE) ?? 0).toBeGreaterThan(10);
+    expect(counts.get(DIAMOND_ORE) ?? 0).toBeGreaterThan(5);
   });
 });
 

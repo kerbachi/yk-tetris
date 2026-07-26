@@ -1,9 +1,17 @@
 import {
   AIR,
   BEDROCK,
+  COAL_ORE,
+  COPPER_ORE,
+  DIAMOND_ORE,
   DIRT,
+  EMERALD_ORE,
+  GOLD_ORE,
   GRASS,
+  IRON_ORE,
+  LAPIS_ORE,
   LEAVES,
+  REDSTONE_ORE,
   SAND,
   STONE,
   WATER,
@@ -126,6 +134,8 @@ export class World {
       }
     }
 
+    this.scatterOres();
+
     // Mark all chunks dirty for initial mesh
     for (let cz = 0; cz < WORLD_CHUNKS_Z; cz++) {
       for (let cy = 0; cy < WORLD_CHUNKS_Y; cy++) {
@@ -133,6 +143,67 @@ export class World {
           this.dirty.add(chunkKey(cx, cy, cz));
         }
       }
+    }
+  }
+
+  /**
+   * Replace underground stone with ore veins (Minecraft-like rarity by depth).
+   */
+  private scatterOres(): void {
+    const ores: {
+      id: BlockId;
+      veins: number;
+      size: number;
+      minY: number;
+      maxY: number;
+    }[] = [
+      { id: COAL_ORE, veins: 90, size: 14, minY: 4, maxY: 52 },
+      { id: COPPER_ORE, veins: 55, size: 10, minY: 4, maxY: 48 },
+      { id: IRON_ORE, veins: 70, size: 9, minY: 4, maxY: 44 },
+      { id: GOLD_ORE, veins: 28, size: 7, minY: 3, maxY: 28 },
+      { id: REDSTONE_ORE, veins: 35, size: 8, minY: 2, maxY: 20 },
+      { id: LAPIS_ORE, veins: 22, size: 7, minY: 2, maxY: 28 },
+      { id: DIAMOND_ORE, veins: 14, size: 5, minY: 2, maxY: 16 },
+      { id: EMERALD_ORE, veins: 10, size: 3, minY: 4, maxY: 32 },
+    ];
+
+    for (const ore of ores) {
+      for (let v = 0; v < ore.veins; v++) {
+        const bx = Math.floor(hash2(v, ore.id, this.seed + 501) * WORLD_W);
+        const bz = Math.floor(hash2(v, ore.id, this.seed + 502) * WORLD_D);
+        const by =
+          ore.minY +
+          Math.floor(hash2(v, ore.id, this.seed + 503) * (ore.maxY - ore.minY + 1));
+        this.placeOreVein(bx, by, bz, ore.id, ore.size, v);
+      }
+    }
+  }
+
+  private placeOreVein(
+    ox: number,
+    oy: number,
+    oz: number,
+    id: BlockId,
+    size: number,
+    salt: number,
+  ): void {
+    let x = ox;
+    let y = oy;
+    let z = oz;
+    for (let i = 0; i < size; i++) {
+      if (inBounds(x, y, z) && this.blocks[this.index(x, y, z)] === STONE) {
+        this.blocks[this.index(x, y, z)] = id;
+      }
+      const dir = Math.floor(hash2(i, salt, this.seed + id * 17) * 6);
+      if (dir === 0) x++;
+      else if (dir === 1) x--;
+      else if (dir === 2) y++;
+      else if (dir === 3) y--;
+      else if (dir === 4) z++;
+      else z--;
+      // Keep veins mostly underground in stone band
+      if (y < 2) y = 2;
+      if (y > WORLD_H - 2) y = WORLD_H - 2;
     }
   }
 

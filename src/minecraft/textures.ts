@@ -4,9 +4,12 @@
  */
 
 export const TILE_SIZE = 16;
-export const ATLAS_COLS = 4;
+export const ATLAS_COLS = 8;
 export const ATLAS_ROWS = 4;
-export const ATLAS_SIZE = TILE_SIZE * ATLAS_COLS;
+export const ATLAS_W = TILE_SIZE * ATLAS_COLS;
+export const ATLAS_H = TILE_SIZE * ATLAS_ROWS;
+/** @deprecated use ATLAS_W — kept equal for square-math callers */
+export const ATLAS_SIZE = ATLAS_W;
 
 /** Atlas tile indices */
 export const TEX = {
@@ -22,11 +25,32 @@ export const TEX = {
   COBBLE: 9,
   PLANKS: 10,
   BEDROCK: 11,
+  // Ores
+  COAL_ORE: 12,
+  IRON_ORE: 13,
+  COPPER_ORE: 14,
+  GOLD_ORE: 15,
+  REDSTONE_ORE: 16,
+  LAPIS_ORE: 17,
+  DIAMOND_ORE: 18,
+  EMERALD_ORE: 19,
+  // Mineral / storage blocks
+  COAL_BLOCK: 20,
+  IRON_BLOCK: 21,
+  COPPER_BLOCK: 22,
+  GOLD_BLOCK: 23,
+  REDSTONE_BLOCK: 24,
+  LAPIS_BLOCK: 25,
+  DIAMOND_BLOCK: 26,
+  EMERALD_BLOCK: 27,
+  QUARTZ_BLOCK: 28,
+  AMETHYST_BLOCK: 29,
 } as const;
 
 export type TexId = (typeof TEX)[keyof typeof TEX];
 
 type RGBA = [number, number, number, number];
+type RGB = [number, number, number];
 
 const clamp = (v: number, lo = 0, hi = 255): number =>
   Math.max(lo, Math.min(hi, Math.round(v)));
@@ -89,7 +113,6 @@ const paintGrassTop = (data: Uint8ClampedArray): void => {
       const n = nhash(x, y, 37);
       if (n > 0.78) setPx(data, x, y, 70, 130, 42);
       else if (n < 0.18) setPx(data, x, y, 118, 180, 72);
-      // Tiny darker tufts
       if (nhash(x, y, 39) > 0.92) setPx(data, x, y, 55, 105, 35);
     }
   }
@@ -97,14 +120,12 @@ const paintGrassTop = (data: Uint8ClampedArray): void => {
 
 const paintGrassSide = (data: Uint8ClampedArray): void => {
   paintDirt(data);
-  // Grass fringe along the top few rows (classic Minecraft look)
   for (let x = 0; x < TILE_SIZE; x++) {
     const fringe = 3 + Math.floor(nhash(x, 0, 51) * 2);
     for (let y = 0; y < fringe; y++) {
       const green = 85 + nhash(x, y, 52) * 45;
       setPx(data, x, y, 70 + nhash(x, y, 53) * 20, green, 40 + nhash(x, y, 54) * 15);
     }
-    // Occasional hanging blade
     if (nhash(x, 0, 55) > 0.65) {
       setPx(data, x, fringe, 75, 140, 48);
     }
@@ -124,7 +145,6 @@ const paintStone = (data: Uint8ClampedArray): void => {
 
 const paintCobble = (data: Uint8ClampedArray): void => {
   fillNoise(data, [112, 112, 112, 255], 10, 71);
-  // Irregular stone “chunks”
   const blobs: [number, number, number, number][] = [
     [1, 1, 6, 5],
     [8, 0, 7, 6],
@@ -143,7 +163,6 @@ const paintCobble = (data: Uint8ClampedArray): void => {
       }
     }
   }
-  // Dark mortar cracks
   for (let i = 0; i < TILE_SIZE; i++) {
     setPx(data, i, 6, 70, 70, 70);
     setPx(data, 7, i, 70, 70, 70);
@@ -162,7 +181,6 @@ const paintWoodTop = (data: Uint8ClampedArray): void => {
       setPx(data, x, y, base[0]! + n, base[1]! + n, base[2]! + n);
     }
   }
-  // Dark bark rim
   for (let y = 0; y < TILE_SIZE; y++) {
     for (let x = 0; x < TILE_SIZE; x++) {
       if (x === 0 || y === 0 || x === TILE_SIZE - 1 || y === TILE_SIZE - 1) {
@@ -179,7 +197,6 @@ const paintWoodSide = (data: Uint8ClampedArray): void => {
       const base = band % 2 === 0 ? [102, 78, 46] : [88, 64, 36];
       const n = (nhash(x, y, 91) - 0.5) * 18;
       setPx(data, x, y, base[0]! + n, base[1]! + n, base[2]! + n);
-      // Vertical bark grooves
       if (x % 4 === 0) setPx(data, x, y, 70, 50, 28);
       if (nhash(x, y, 92) > 0.93) setPx(data, x, y, 60, 42, 22);
     }
@@ -190,14 +207,9 @@ const paintLeaves = (data: Uint8ClampedArray): void => {
   for (let y = 0; y < TILE_SIZE; y++) {
     for (let x = 0; x < TILE_SIZE; x++) {
       const n = nhash(x, y, 101);
-      if (n > 0.72) {
-        // Transparent-looking holes (darker so foliage feels airy)
-        setPx(data, x, y, 28, 55, 22, 255);
-      } else if (n > 0.45) {
-        setPx(data, x, y, 48, 120, 38);
-      } else {
-        setPx(data, x, y, 72, 150, 52);
-      }
+      if (n > 0.72) setPx(data, x, y, 28, 55, 22, 255);
+      else if (n > 0.45) setPx(data, x, y, 48, 120, 38);
+      else setPx(data, x, y, 72, 150, 52);
     }
   }
 };
@@ -225,22 +237,18 @@ const paintWater = (data: Uint8ClampedArray): void => {
 const paintPlanks = (data: Uint8ClampedArray): void => {
   for (let y = 0; y < TILE_SIZE; y++) {
     const board = Math.floor(y / 4);
-    const base =
-      board % 2 === 0 ? [188, 152, 98] : [172, 136, 84];
+    const base = board % 2 === 0 ? [188, 152, 98] : [172, 136, 84];
     for (let x = 0; x < TILE_SIZE; x++) {
       const n = (nhash(x, y, 131) - 0.5) * 14;
       setPx(data, x, y, base[0]! + n, base[1]! + n, base[2]! + n);
-      // Grain
       if (nhash(x, y, 132) > 0.88) {
         setPx(data, x, y, base[0]! - 25, base[1]! - 25, base[2]! - 20);
       }
     }
-    // Board seams
     if (y % 4 === 0) {
       for (let x = 0; x < TILE_SIZE; x++) setPx(data, x, y, 120, 90, 55);
     }
   }
-  // Vertical nail-ish marks
   for (const nx of [3, 11]) {
     for (const ny of [2, 6, 10, 14]) {
       setPx(data, nx, ny, 100, 80, 50);
@@ -259,6 +267,48 @@ const paintBedrock = (data: Uint8ClampedArray): void => {
   }
 };
 
+/** Stone base with colored mineral flecks (classic ore look). */
+const paintOre = (data: Uint8ClampedArray, fleck: RGB, salt: number, density = 0.22): void => {
+  paintStone(data);
+  for (let y = 0; y < TILE_SIZE; y++) {
+    for (let x = 0; x < TILE_SIZE; x++) {
+      if (nhash(x, y, salt) > 1 - density) {
+        const n = (nhash(x, y, salt + 1) - 0.5) * 30;
+        setPx(data, x, y, fleck[0] + n, fleck[1] + n, fleck[2] + n);
+        // Small 2× cluster for chunkier ore bits
+        if (nhash(x, y, salt + 2) > 0.4) {
+          setPx(data, x + 1, y, fleck[0] + n, fleck[1] + n, fleck[2] + n);
+          setPx(data, x, y + 1, fleck[0] + n * 0.8, fleck[1] + n * 0.8, fleck[2] + n * 0.8);
+        }
+      }
+    }
+  }
+};
+
+/** Beveled solid mineral block. */
+const paintMineralBlock = (data: Uint8ClampedArray, color: RGB, salt: number): void => {
+  for (let y = 0; y < TILE_SIZE; y++) {
+    for (let x = 0; x < TILE_SIZE; x++) {
+      const edge = x === 0 || y === 0 || x === TILE_SIZE - 1 || y === TILE_SIZE - 1;
+      const hi = x < 2 || y < 2;
+      const lo = x > TILE_SIZE - 3 || y > TILE_SIZE - 3;
+      let mul = 1;
+      if (edge) mul = 0.55;
+      else if (hi) mul = 1.15;
+      else if (lo) mul = 0.75;
+      const n = (nhash(x, y, salt) - 0.5) * 18;
+      setPx(data, x, y, color[0] * mul + n, color[1] * mul + n, color[2] * mul + n);
+    }
+  }
+  // Inner frame like classic storage blocks
+  for (let i = 2; i < TILE_SIZE - 2; i++) {
+    setPx(data, i, 2, color[0] * 0.7, color[1] * 0.7, color[2] * 0.7);
+    setPx(data, i, TILE_SIZE - 3, color[0] * 0.7, color[1] * 0.7, color[2] * 0.7);
+    setPx(data, 2, i, color[0] * 0.7, color[1] * 0.7, color[2] * 0.7);
+    setPx(data, TILE_SIZE - 3, i, color[0] * 0.7, color[1] * 0.7, color[2] * 0.7);
+  }
+};
+
 const PAINTERS: Record<number, (data: Uint8ClampedArray) => void> = {
   [TEX.GRASS_TOP]: paintGrassTop,
   [TEX.GRASS_SIDE]: paintGrassSide,
@@ -272,6 +322,24 @@ const PAINTERS: Record<number, (data: Uint8ClampedArray) => void> = {
   [TEX.COBBLE]: paintCobble,
   [TEX.PLANKS]: paintPlanks,
   [TEX.BEDROCK]: paintBedrock,
+  [TEX.COAL_ORE]: (d) => paintOre(d, [40, 40, 40], 201, 0.28),
+  [TEX.IRON_ORE]: (d) => paintOre(d, [200, 170, 140], 202, 0.24),
+  [TEX.COPPER_ORE]: (d) => paintOre(d, [180, 100, 70], 203, 0.26),
+  [TEX.GOLD_ORE]: (d) => paintOre(d, [250, 210, 60], 204, 0.22),
+  [TEX.REDSTONE_ORE]: (d) => paintOre(d, [200, 30, 30], 205, 0.26),
+  [TEX.LAPIS_ORE]: (d) => paintOre(d, [40, 70, 200], 206, 0.24),
+  [TEX.DIAMOND_ORE]: (d) => paintOre(d, [90, 230, 230], 207, 0.18),
+  [TEX.EMERALD_ORE]: (d) => paintOre(d, [40, 210, 90], 208, 0.16),
+  [TEX.COAL_BLOCK]: (d) => paintMineralBlock(d, [30, 30, 30], 211),
+  [TEX.IRON_BLOCK]: (d) => paintMineralBlock(d, [210, 210, 210], 212),
+  [TEX.COPPER_BLOCK]: (d) => paintMineralBlock(d, [190, 110, 80], 213),
+  [TEX.GOLD_BLOCK]: (d) => paintMineralBlock(d, [250, 210, 50], 214),
+  [TEX.REDSTONE_BLOCK]: (d) => paintMineralBlock(d, [170, 25, 25], 215),
+  [TEX.LAPIS_BLOCK]: (d) => paintMineralBlock(d, [35, 65, 190], 216),
+  [TEX.DIAMOND_BLOCK]: (d) => paintMineralBlock(d, [80, 220, 220], 217),
+  [TEX.EMERALD_BLOCK]: (d) => paintMineralBlock(d, [40, 200, 90], 218),
+  [TEX.QUARTZ_BLOCK]: (d) => paintMineralBlock(d, [230, 225, 215], 219),
+  [TEX.AMETHYST_BLOCK]: (d) => paintMineralBlock(d, [140, 90, 200], 220),
 };
 
 const blitTile = (
@@ -286,7 +354,7 @@ const blitTile = (
   for (let y = 0; y < TILE_SIZE; y++) {
     for (let x = 0; x < TILE_SIZE; x++) {
       const si = (y * TILE_SIZE + x) * 4;
-      const di = ((oy + y) * ATLAS_SIZE + (ox + x)) * 4;
+      const di = ((oy + y) * ATLAS_W + (ox + x)) * 4;
       atlas.data[di] = tileData[si]!;
       atlas.data[di + 1] = tileData[si + 1]!;
       atlas.data[di + 2] = tileData[si + 2]!;
@@ -301,10 +369,10 @@ let atlasCanvas: HTMLCanvasElement | null = null;
 export const createAtlasCanvas = (): HTMLCanvasElement => {
   if (atlasCanvas) return atlasCanvas;
   const canvas = document.createElement('canvas');
-  canvas.width = ATLAS_SIZE;
-  canvas.height = ATLAS_SIZE;
+  canvas.width = ATLAS_W;
+  canvas.height = ATLAS_H;
   const ctx = canvas.getContext('2d')!;
-  const atlas = ctx.createImageData(ATLAS_SIZE, ATLAS_SIZE);
+  const atlas = ctx.createImageData(ATLAS_W, ATLAS_H);
 
   for (const [key, painter] of Object.entries(PAINTERS)) {
     const tile = Number(key);
@@ -314,9 +382,10 @@ export const createAtlasCanvas = (): HTMLCanvasElement => {
   }
 
   // Fill unused atlas slots so a bad UV never samples transparent black.
-  for (let tile = 12; tile < ATLAS_COLS * ATLAS_ROWS; tile++) {
+  for (let tile = 0; tile < ATLAS_COLS * ATLAS_ROWS; tile++) {
+    if (PAINTERS[tile]) continue;
     const tileData = new Uint8ClampedArray(TILE_SIZE * TILE_SIZE * 4);
-    paintDirt(tileData);
+    paintStone(tileData);
     blitTile(atlas, tile, tileData);
   }
 
@@ -332,11 +401,12 @@ export const tileUv = (
 ): { u0: number; v0: number; u1: number; v1: number } => {
   const col = tile % ATLAS_COLS;
   const row = Math.floor(tile / ATLAS_COLS);
-  const inset = 0.5 / ATLAS_SIZE;
-  const u0 = col / ATLAS_COLS + inset;
-  const v0 = row / ATLAS_ROWS + inset;
-  const u1 = (col + 1) / ATLAS_COLS - inset;
-  const v1 = (row + 1) / ATLAS_ROWS - inset;
+  const insetU = 0.5 / ATLAS_W;
+  const insetV = 0.5 / ATLAS_H;
+  const u0 = col / ATLAS_COLS + insetU;
+  const v0 = row / ATLAS_ROWS + insetV;
+  const u1 = (col + 1) / ATLAS_COLS - insetU;
+  const v1 = (row + 1) / ATLAS_ROWS - insetV;
   return { u0, v0, u1, v1 };
 };
 

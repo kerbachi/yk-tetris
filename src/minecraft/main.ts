@@ -1,5 +1,5 @@
 import './style.css';
-import { BLOCKS, HOTBAR } from './blocks';
+import { BLOCKS, HOTBAR, HOTBAR_VISIBLE } from './blocks';
 import { MinecraftGame, type HudSnapshot } from './game';
 import { createAtlasCanvas, tileIconDataUrl } from './textures';
 
@@ -10,24 +10,37 @@ const hotbarEl = document.getElementById('hotbar')!;
 const fpsEl = document.getElementById('fps')!;
 const selectedEl = document.getElementById('selected')!;
 
-const slotEls: HTMLElement[] = [];
 const atlas = createAtlasCanvas();
+const slotEls: HTMLElement[] = [];
 
-const paintHotbar = (selected: number): void => {
-  for (let i = 0; i < HOTBAR.length; i++) {
+const paintHotbar = (selected: number, windowStart: number): void => {
+  for (let i = 0; i < HOTBAR_VISIBLE; i++) {
     const el = slotEls[i];
     if (!el) continue;
-    el.classList.toggle('selected', i === selected);
+    const index = windowStart + i;
+    const id = HOTBAR[index];
+    const def = id !== undefined ? BLOCKS[id] : undefined;
+    el.classList.toggle('selected', index === selected);
+    el.classList.toggle('empty', !def);
+    const swatch = el.querySelector('.swatch') as HTMLElement | null;
+    const key = el.querySelector('.key') as HTMLElement | null;
+    if (key) key.textContent = String(i + 1);
+    if (swatch && def) {
+      swatch.style.backgroundImage = `url(${tileIconDataUrl(atlas, def.textures[0]!)})`;
+      swatch.style.visibility = 'visible';
+    } else if (swatch) {
+      swatch.style.visibility = 'hidden';
+    }
   }
 };
 
 const buildHotbar = (): void => {
   hotbarEl.innerHTML = '';
-  HOTBAR.forEach((id, i) => {
-    const def = BLOCKS[id]!;
+  slotEls.length = 0;
+  for (let i = 0; i < HOTBAR_VISIBLE; i++) {
     const slot = document.createElement('div');
     slot.className = 'slot';
-    slot.dataset.index = String(i);
+    slot.dataset.offset = String(i);
 
     const key = document.createElement('span');
     key.className = 'key';
@@ -35,22 +48,18 @@ const buildHotbar = (): void => {
 
     const swatch = document.createElement('div');
     swatch.className = 'swatch';
-    // Prefer top face texture (grass top, wood rings, etc.)
-    swatch.style.backgroundImage = `url(${tileIconDataUrl(atlas, def.textures[0]!)})`;
-    swatch.style.backgroundSize = 'cover';
-    swatch.style.imageRendering = 'pixelated';
 
     slot.append(key, swatch);
     hotbarEl.appendChild(slot);
     slotEls.push(slot);
-  });
-  paintHotbar(0);
+  }
+  paintHotbar(0, 0);
 };
 
 const onHud = (hud: HudSnapshot): void => {
   fpsEl.textContent = `${hud.fps} FPS`;
   selectedEl.textContent = hud.blockName;
-  paintHotbar(hud.selected);
+  paintHotbar(hud.selected, game.hotbarWindowStart());
   if (hud.locked) overlay.classList.add('hidden');
   else overlay.classList.remove('hidden');
 };
@@ -67,6 +76,16 @@ playBtn.addEventListener('click', () => {
 
 hotbarEl.addEventListener('click', (e) => {
   const slot = (e.target as HTMLElement).closest('.slot') as HTMLElement | null;
-  if (!slot?.dataset.index) return;
-  game.selectSlot(Number(slot.dataset.index));
+  if (!slot?.dataset.offset) return;
+  const index = game.hotbarWindowStart() + Number(slot.dataset.offset);
+  game.selectSlot(index);
 });
+
+hotbarEl.addEventListener(
+  'wheel',
+  (e) => {
+    e.preventDefault();
+    game.cycleHotbar(e.deltaY > 0 ? 1 : -1);
+  },
+  { passive: false },
+);

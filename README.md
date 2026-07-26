@@ -103,7 +103,7 @@ First-person voxel sandbox:
 
 - **Click to play** locks the mouse
 - **W/A/S/D** move, **Space** jump, **Shift** sprint
-- **LMB** break, **RMB** place, **1–8** hotbar, **Esc** release mouse
+- **LMB** break, **RMB** place, **1–9** / scroll hotbar (ores & minerals), **Esc** release mouse
 
 ## Desktop binaries (Windows, Linux & macOS)
 

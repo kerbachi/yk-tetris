@@ -1,5 +1,12 @@
 import * as THREE from 'three';
-import { HOTBAR, blockName, isBreakable, isSolid, type BlockId } from './blocks';
+import {
+  HOTBAR,
+  HOTBAR_VISIBLE,
+  blockName,
+  isBreakable,
+  isSolid,
+  type BlockId,
+} from './blocks';
 import { meshChunk } from './mesher';
 import {
   createPlayer,
@@ -182,6 +189,18 @@ export class MinecraftGame {
     this.selected = index;
   }
 
+  /** First index of the 9-slot window shown in the HUD. */
+  hotbarWindowStart(): number {
+    if (HOTBAR.length <= HOTBAR_VISIBLE) return 0;
+    const maxStart = HOTBAR.length - HOTBAR_VISIBLE;
+    return Math.max(0, Math.min(maxStart, this.selected - Math.floor(HOTBAR_VISIBLE / 2)));
+  }
+
+  cycleHotbar(delta: number): void {
+    if (HOTBAR.length === 0) return;
+    this.selected = (this.selected + delta + HOTBAR.length) % HOTBAR.length;
+  }
+
   private rebuildDirtyChunks(): void {
     if (this.world.dirty.size === 0) return;
     const keys = [...this.world.dirty];
@@ -261,12 +280,20 @@ export class MinecraftGame {
       this.input.jump = true;
     }
     if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') this.input.sprint = true;
-    if (e.code >= 'Digit1' && e.code <= 'Digit8') {
-      this.selected = Number(e.code.slice(5)) - 1;
+    if (e.code >= 'Digit1' && e.code <= 'Digit9') {
+      const slot = Number(e.code.slice(5)) - 1;
+      const index = this.hotbarWindowStart() + slot;
+      if (index < HOTBAR.length) this.selected = index;
     }
     if (e.code === 'Escape' && this.locked) {
       document.exitPointerLock();
     }
+  };
+
+  private onWheel = (e: WheelEvent): void => {
+    if (!this.locked) return;
+    e.preventDefault();
+    this.cycleHotbar(e.deltaY > 0 ? 1 : -1);
   };
 
   private onKeyUp = (e: KeyboardEvent): void => {
@@ -309,6 +336,7 @@ export class MinecraftGame {
     window.addEventListener('mousemove', this.onMouseMove);
     this.renderer.domElement.addEventListener('mousedown', this.onMouseDown);
     this.renderer.domElement.addEventListener('contextmenu', this.onContextMenu);
+    this.renderer.domElement.addEventListener('wheel', this.onWheel, { passive: false });
     document.addEventListener('pointerlockchange', this.onPointerLockChange);
   }
 
@@ -319,6 +347,7 @@ export class MinecraftGame {
     window.removeEventListener('mousemove', this.onMouseMove);
     this.renderer.domElement.removeEventListener('mousedown', this.onMouseDown);
     this.renderer.domElement.removeEventListener('contextmenu', this.onContextMenu);
+    this.renderer.domElement.removeEventListener('wheel', this.onWheel);
     document.removeEventListener('pointerlockchange', this.onPointerLockChange);
   }
 }
