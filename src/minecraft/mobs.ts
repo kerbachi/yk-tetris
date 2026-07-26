@@ -1,4 +1,4 @@
-import { DIRT, GRASS, SAND, isSolid } from './blocks';
+import { DIRT, GRASS, LEAVES, SAND, WOOD, isSolid } from './blocks';
 import type { HotbarItem } from './items';
 import { hash2 } from './noise';
 import { World, WORLD_D, WORLD_H, WORLD_W, SEA_LEVEL } from './world';
@@ -149,6 +149,7 @@ const collidesMob = (
   return false;
 };
 
+/** Walkable ground under a column, skipping leaves/wood (trees). */
 const surfaceSpawn = (
   world: World,
   x: number,
@@ -157,11 +158,20 @@ const surfaceSpawn = (
   const ix = Math.min(WORLD_W - 2, Math.max(1, Math.floor(x)));
   const iz = Math.min(WORLD_D - 2, Math.max(1, Math.floor(z)));
   let y = WORLD_H - 1;
-  while (y > 0 && !isSolid(world.get(ix, y, iz))) y--;
+  while (y > 0) {
+    const id = world.get(ix, y, iz);
+    if (!isSolid(id) || id === LEAVES || id === WOOD) {
+      y--;
+      continue;
+    }
+    break;
+  }
   if (y <= 0 || y <= SEA_LEVEL) return null;
   // Prefer grass but allow dirt/sand so nearby packs always appear
   const ground = world.get(ix, y, iz);
   if (ground !== GRASS && ground !== DIRT && ground !== SAND) return null;
+  // Need headroom so mobs aren't stuck inside a trunk
+  if (isSolid(world.get(ix, y + 1, iz)) || isSolid(world.get(ix, y + 2, iz))) return null;
   return { x: ix + 0.5, y: y + 1.01, z: iz + 0.5 };
 };
 

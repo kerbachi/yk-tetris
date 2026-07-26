@@ -230,12 +230,37 @@ export class World {
     }
   }
 
-  /** Surface spawn near world center above solid ground. */
+  /** Surface spawn near world center on grass/dirt/sand (not in a tree). */
   spawnPoint(): { x: number; y: number; z: number } {
-    const x = Math.floor(WORLD_W / 2);
-    const z = Math.floor(WORLD_D / 2);
+    const cx = Math.floor(WORLD_W / 2);
+    const cz = Math.floor(WORLD_D / 2);
+    for (let r = 0; r < 24; r++) {
+      for (let dz = -r; dz <= r; dz++) {
+        for (let dx = -r; dx <= r; dx++) {
+          if (Math.max(Math.abs(dx), Math.abs(dz)) !== r) continue;
+          const x = cx + dx;
+          const z = cz + dz;
+          if (!inBounds(x, 1, z)) continue;
+          let y = WORLD_H - 1;
+          while (y > 0) {
+            const id = this.get(x, y, z);
+            if (!isSolid(id) || id === LEAVES || id === WOOD) {
+              y--;
+              continue;
+            }
+            break;
+          }
+          if (y <= SEA_LEVEL) continue;
+          const ground = this.get(x, y, z);
+          if (ground !== GRASS && ground !== DIRT && ground !== SAND) continue;
+          if (isSolid(this.get(x, y + 1, z)) || isSolid(this.get(x, y + 2, z))) continue;
+          return { x: x + 0.5, y: y + 2.1, z: z + 0.5 };
+        }
+      }
+    }
+    // Fallback: highest solid at center
     let y = WORLD_H - 1;
-    while (y > 0 && !isSolid(this.get(x, y, z))) y--;
-    return { x: x + 0.5, y: y + 2.1, z: z + 0.5 };
+    while (y > 0 && !isSolid(this.get(cx, y, cz))) y--;
+    return { x: cx + 0.5, y: y + 2.1, z: cz + 0.5 };
   }
 }
