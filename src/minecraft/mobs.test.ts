@@ -7,6 +7,7 @@ import {
   rollDrops,
   spawnMobs,
 } from './mobs';
+import { createMobMesh } from './mobRender';
 import { World } from './world';
 
 describe('mobs', () => {
@@ -45,6 +46,14 @@ describe('mobs', () => {
     const drops = rollDrops('cow');
     for (const d of drops) {
       expect(d.kind).toBe('loot');
+    }
+  });
+
+  it('mob meshes include eyes and facial detail boxes', () => {
+    for (const kind of ['pig', 'cow', 'chicken', 'sheep'] as const) {
+      const mesh = createMobMesh(kind);
+      // Body + head + eyes (4) + extras — eyes alone add 4 boxes
+      expect(mesh.children.length).toBeGreaterThan(10);
     }
   });
 });
