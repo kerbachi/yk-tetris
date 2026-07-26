@@ -111,6 +111,10 @@ button:hover {
   margin: 4px 0;
 }
 
+#difficulty-panel.hidden {
+  display: none;
+}
+
 .difficulty {
   display: flex;
   gap: 6px;
