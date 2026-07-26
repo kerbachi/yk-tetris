@@ -116,9 +116,13 @@ body {
 }
 
 .slot .swatch {
-  width: 28px;
-  height: 28px;
-  border: 1px solid rgba(0, 0, 0, 0.35);
+  width: 32px;
+  height: 32px;
+  border: none;
+  background-color: transparent;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
   image-rendering: pixelated;
 }
 
@@ -130,10 +134,6 @@ body {
   opacity: 0.75;
 }
 
-.slot.tool .swatch {
-  border-color: transparent;
-  background-color: transparent;
-}
 
 #held-item {
   position: fixed;
@@ -368,11 +368,14 @@ body.inventory-open #break-bar {
 }
 
 .inv-cell .swatch {
-  width: 70%;
-  height: 70%;
-  background-size: cover;
+  width: 85%;
+  height: 85%;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
   image-rendering: pixelated;
   border: none;
+  background-color: transparent;
 }
 
 .inv-hint {

@@ -133,12 +133,15 @@ const paintGrassSide = (data: Uint8ClampedArray): void => {
 };
 
 const paintStone = (data: Uint8ClampedArray): void => {
-  fillNoise(data, [125, 125, 125, 255], 14, 61);
+  // Classic grey stone with subtle mottling
+  fillNoise(data, [128, 128, 128, 255], 10, 61);
   for (let y = 0; y < TILE_SIZE; y++) {
     for (let x = 0; x < TILE_SIZE; x++) {
       const n = nhash(x, y, 62);
-      if (n > 0.88) setPx(data, x, y, 95, 95, 95);
-      else if (n < 0.12) setPx(data, x, y, 150, 150, 150);
+      if (n > 0.9) setPx(data, x, y, 102, 102, 102);
+      else if (n > 0.78) setPx(data, x, y, 118, 118, 118);
+      else if (n < 0.1) setPx(data, x, y, 148, 148, 148);
+      else if (n < 0.2) setPx(data, x, y, 138, 138, 138);
     }
   }
 };
@@ -267,45 +270,171 @@ const paintBedrock = (data: Uint8ClampedArray): void => {
   }
 };
 
-/** Stone base with colored mineral flecks (classic ore look). */
-const paintOre = (data: Uint8ClampedArray, fleck: RGB, salt: number, density = 0.22): void => {
-  paintStone(data);
-  for (let y = 0; y < TILE_SIZE; y++) {
-    for (let x = 0; x < TILE_SIZE; x++) {
-      if (nhash(x, y, salt) > 1 - density) {
-        const n = (nhash(x, y, salt + 1) - 0.5) * 30;
-        setPx(data, x, y, fleck[0] + n, fleck[1] + n, fleck[2] + n);
-        // Small 2× cluster for chunkier ore bits
-        if (nhash(x, y, salt + 2) > 0.4) {
-          setPx(data, x + 1, y, fleck[0] + n, fleck[1] + n, fleck[2] + n);
-          setPx(data, x, y + 1, fleck[0] + n * 0.8, fleck[1] + n * 0.8, fleck[2] + n * 0.8);
-        }
-      }
+/** Stamp a shaded ore blob (mid / highlight / shadow) onto stone. */
+const stampOreBlob = (
+  data: Uint8ClampedArray,
+  cx: number,
+  cy: number,
+  mid: RGB,
+  hi: RGB,
+  lo: RGB,
+  radius: number,
+): void => {
+  for (let dy = -radius; dy <= radius; dy++) {
+    for (let dx = -radius; dx <= radius; dx++) {
+      const d = Math.hypot(dx, dy);
+      if (d > radius + 0.2) continue;
+      let c = mid;
+      if (d <= radius * 0.35) c = hi;
+      else if (d >= radius * 0.75) c = lo;
+      setPx(data, cx + dx, cy + dy, c[0], c[1], c[2]);
     }
   }
 };
 
-/** Beveled solid mineral block. */
-const paintMineralBlock = (data: Uint8ClampedArray, color: RGB, salt: number): void => {
+/**
+ * Minecraft-style ore: stone with irregular mineral clusters
+ * (not single speckles).
+ */
+const paintOre = (
+  data: Uint8ClampedArray,
+  mid: RGB,
+  hi: RGB,
+  lo: RGB,
+  salt: number,
+  blobs = 7,
+): void => {
+  paintStone(data);
+  for (let i = 0; i < blobs; i++) {
+    const bx = 1 + Math.floor(nhash(i, 0, salt) * 14);
+    const by = 1 + Math.floor(nhash(i, 1, salt) * 14);
+    const r = 1 + Math.floor(nhash(i, 2, salt) * 2.2);
+    stampOreBlob(data, bx, by, mid, hi, lo, r);
+  }
+  // A few single “crystal” pixels for sparkle
+  for (let i = 0; i < 5; i++) {
+    const x = Math.floor(nhash(i, 3, salt + 9) * 16);
+    const y = Math.floor(nhash(i, 4, salt + 9) * 16);
+    setPx(data, x, y, hi[0], hi[1], hi[2]);
+  }
+};
+
+/** Banded metal storage block (iron / gold style). */
+const paintBandedBlock = (
+  data: Uint8ClampedArray,
+  base: RGB,
+  dark: RGB,
+  light: RGB,
+  salt: number,
+): void => {
   for (let y = 0; y < TILE_SIZE; y++) {
+    const band = Math.floor(y / 2) % 2 === 0;
     for (let x = 0; x < TILE_SIZE; x++) {
-      const edge = x === 0 || y === 0 || x === TILE_SIZE - 1 || y === TILE_SIZE - 1;
-      const hi = x < 2 || y < 2;
-      const lo = x > TILE_SIZE - 3 || y > TILE_SIZE - 3;
-      let mul = 1;
-      if (edge) mul = 0.55;
-      else if (hi) mul = 1.15;
-      else if (lo) mul = 0.75;
-      const n = (nhash(x, y, salt) - 0.5) * 18;
-      setPx(data, x, y, color[0] * mul + n, color[1] * mul + n, color[2] * mul + n);
+      const edge = x === 0 || y === 0 || x === 15 || y === 15;
+      const n = (nhash(x, y, salt) - 0.5) * 12;
+      let c = band ? base : dark;
+      if (x === 1 || y === 1) c = light;
+      if (edge) c = dark;
+      setPx(data, x, y, c[0] + n, c[1] + n, c[2] + n);
     }
   }
-  // Inner frame like classic storage blocks
-  for (let i = 2; i < TILE_SIZE - 2; i++) {
-    setPx(data, i, 2, color[0] * 0.7, color[1] * 0.7, color[2] * 0.7);
-    setPx(data, i, TILE_SIZE - 3, color[0] * 0.7, color[1] * 0.7, color[2] * 0.7);
-    setPx(data, 2, i, color[0] * 0.7, color[1] * 0.7, color[2] * 0.7);
-    setPx(data, TILE_SIZE - 3, i, color[0] * 0.7, color[1] * 0.7, color[2] * 0.7);
+  // Rivets / studs in corners like classic metal blocks
+  for (const [x, y] of [
+    [3, 3],
+    [12, 3],
+    [3, 12],
+    [12, 12],
+  ] as [number, number][]) {
+    setPx(data, x, y, light[0], light[1], light[2]);
+    setPx(data, x + 1, y, dark[0], dark[1], dark[2]);
+  }
+};
+
+/** Gem / crystal storage block with faceted sheen. */
+const paintGemBlock = (
+  data: Uint8ClampedArray,
+  base: RGB,
+  hi: RGB,
+  lo: RGB,
+  salt: number,
+): void => {
+  for (let y = 0; y < TILE_SIZE; y++) {
+    for (let x = 0; x < TILE_SIZE; x++) {
+      const edge = x === 0 || y === 0 || x === 15 || y === 15;
+      const diag = (x + y) % 5 === 0;
+      const n = (nhash(x, y, salt) - 0.5) * 14;
+      let c = base;
+      if (diag) c = hi;
+      if (x > 10 && y > 10) c = lo;
+      if (x < 3 && y < 3) c = hi;
+      if (edge) c = lo;
+      setPx(data, x, y, c[0] + n, c[1] + n, c[2] + n);
+    }
+  }
+  // Inner bevel frame
+  for (let i = 2; i < 14; i++) {
+    setPx(data, i, 2, hi[0], hi[1], hi[2]);
+    setPx(data, 2, i, hi[0], hi[1], hi[2]);
+    setPx(data, i, 13, lo[0], lo[1], lo[2]);
+    setPx(data, 13, i, lo[0], lo[1], lo[2]);
+  }
+};
+
+const paintCoalBlock = (data: Uint8ClampedArray): void => {
+  fillNoise(data, [28, 28, 28, 255], 10, 211);
+  for (let y = 0; y < TILE_SIZE; y++) {
+    for (let x = 0; x < TILE_SIZE; x++) {
+      if (nhash(x, y, 212) > 0.88) setPx(data, x, y, 55, 55, 55);
+      if (nhash(x, y, 213) > 0.94) setPx(data, x, y, 70, 70, 70);
+      if (x === 0 || y === 0) setPx(data, x, y, 18, 18, 18);
+      if (x === 15 || y === 15) setPx(data, x, y, 12, 12, 12);
+    }
+  }
+};
+
+const paintLapisBlock = (data: Uint8ClampedArray): void => {
+  fillNoise(data, [30, 55, 150, 255], 16, 216);
+  for (let y = 0; y < TILE_SIZE; y++) {
+    for (let x = 0; x < TILE_SIZE; x++) {
+      // Gold flecks like real lapis
+      if (nhash(x, y, 217) > 0.9) setPx(data, x, y, 210, 175, 50);
+      else if (nhash(x, y, 218) > 0.85) setPx(data, x, y, 45, 80, 190);
+      if (x === 0 || y === 0) setPx(data, x, y, 20, 40, 110);
+      if (x === 15 || y === 15) setPx(data, x, y, 15, 30, 90);
+    }
+  }
+};
+
+const paintQuartzBlock = (data: Uint8ClampedArray): void => {
+  fillNoise(data, [235, 230, 223, 255], 8, 219);
+  for (let y = 0; y < TILE_SIZE; y++) {
+    for (let x = 0; x < TILE_SIZE; x++) {
+      if (nhash(x, y, 220) > 0.92) setPx(data, x, y, 210, 205, 198);
+      if (x === 0 || y === 0) setPx(data, x, y, 250, 248, 242);
+      if (x === 15 || y === 15) setPx(data, x, y, 190, 185, 178);
+    }
+  }
+};
+
+const paintAmethystBlock = (data: Uint8ClampedArray): void => {
+  for (let y = 0; y < TILE_SIZE; y++) {
+    for (let x = 0; x < TILE_SIZE; x++) {
+      const facet = Math.floor((x + y * 0.5) / 3) % 3;
+      const shades: RGB[] = [
+        [155, 95, 210],
+        [125, 70, 185],
+        [175, 120, 225],
+      ];
+      const c = shades[facet]!;
+      const n = (nhash(x, y, 221) - 0.5) * 16;
+      setPx(data, x, y, c[0] + n, c[1] + n, c[2] + n);
+    }
+  }
+  for (let i = 0; i < 16; i++) {
+    setPx(data, i, 0, 100, 55, 150);
+    setPx(data, 0, i, 100, 55, 150);
+    setPx(data, i, 15, 80, 40, 120);
+    setPx(data, 15, i, 80, 40, 120);
   }
 };
 
@@ -322,24 +451,38 @@ const PAINTERS: Record<number, (data: Uint8ClampedArray) => void> = {
   [TEX.COBBLE]: paintCobble,
   [TEX.PLANKS]: paintPlanks,
   [TEX.BEDROCK]: paintBedrock,
-  [TEX.COAL_ORE]: (d) => paintOre(d, [40, 40, 40], 201, 0.28),
-  [TEX.IRON_ORE]: (d) => paintOre(d, [200, 170, 140], 202, 0.24),
-  [TEX.COPPER_ORE]: (d) => paintOre(d, [180, 100, 70], 203, 0.26),
-  [TEX.GOLD_ORE]: (d) => paintOre(d, [250, 210, 60], 204, 0.22),
-  [TEX.REDSTONE_ORE]: (d) => paintOre(d, [200, 30, 30], 205, 0.26),
-  [TEX.LAPIS_ORE]: (d) => paintOre(d, [40, 70, 200], 206, 0.24),
-  [TEX.DIAMOND_ORE]: (d) => paintOre(d, [90, 230, 230], 207, 0.18),
-  [TEX.EMERALD_ORE]: (d) => paintOre(d, [40, 210, 90], 208, 0.16),
-  [TEX.COAL_BLOCK]: (d) => paintMineralBlock(d, [30, 30, 30], 211),
-  [TEX.IRON_BLOCK]: (d) => paintMineralBlock(d, [210, 210, 210], 212),
-  [TEX.COPPER_BLOCK]: (d) => paintMineralBlock(d, [190, 110, 80], 213),
-  [TEX.GOLD_BLOCK]: (d) => paintMineralBlock(d, [250, 210, 50], 214),
-  [TEX.REDSTONE_BLOCK]: (d) => paintMineralBlock(d, [170, 25, 25], 215),
-  [TEX.LAPIS_BLOCK]: (d) => paintMineralBlock(d, [35, 65, 190], 216),
-  [TEX.DIAMOND_BLOCK]: (d) => paintMineralBlock(d, [80, 220, 220], 217),
-  [TEX.EMERALD_BLOCK]: (d) => paintMineralBlock(d, [40, 200, 90], 218),
-  [TEX.QUARTZ_BLOCK]: (d) => paintMineralBlock(d, [230, 225, 215], 219),
-  [TEX.AMETHYST_BLOCK]: (d) => paintMineralBlock(d, [140, 90, 200], 220),
+  [TEX.COAL_ORE]: (d) =>
+    paintOre(d, [25, 25, 25], [55, 55, 55], [10, 10, 10], 201, 8),
+  [TEX.IRON_ORE]: (d) =>
+    paintOre(d, [200, 170, 140], [230, 205, 175], [155, 120, 95], 202, 7),
+  [TEX.COPPER_ORE]: (d) =>
+    paintOre(d, [180, 100, 70], [210, 140, 95], [130, 70, 45], 203, 7),
+  [TEX.GOLD_ORE]: (d) =>
+    paintOre(d, [245, 205, 55], [255, 235, 120], [190, 145, 30], 204, 6),
+  [TEX.REDSTONE_ORE]: (d) =>
+    paintOre(d, [180, 20, 20], [230, 55, 55], [110, 10, 10], 205, 8),
+  [TEX.LAPIS_ORE]: (d) =>
+    paintOre(d, [35, 70, 190], [70, 110, 230], [20, 40, 130], 206, 7),
+  [TEX.DIAMOND_ORE]: (d) =>
+    paintOre(d, [70, 220, 220], [160, 255, 255], [35, 150, 160], 207, 5),
+  [TEX.EMERALD_ORE]: (d) =>
+    paintOre(d, [35, 195, 85], [90, 240, 140], [15, 120, 50], 208, 4),
+  [TEX.COAL_BLOCK]: paintCoalBlock,
+  [TEX.IRON_BLOCK]: (d) =>
+    paintBandedBlock(d, [210, 210, 215], [160, 160, 168], [240, 240, 245], 212),
+  [TEX.COPPER_BLOCK]: (d) =>
+    paintBandedBlock(d, [190, 110, 80], [140, 75, 50], [220, 145, 105], 213),
+  [TEX.GOLD_BLOCK]: (d) =>
+    paintBandedBlock(d, [250, 210, 45], [195, 145, 25], [255, 240, 120], 214),
+  [TEX.REDSTONE_BLOCK]: (d) =>
+    paintGemBlock(d, [155, 20, 20], [210, 50, 50], [90, 10, 10], 215),
+  [TEX.LAPIS_BLOCK]: paintLapisBlock,
+  [TEX.DIAMOND_BLOCK]: (d) =>
+    paintGemBlock(d, [70, 215, 215], [150, 255, 255], [30, 140, 150], 217),
+  [TEX.EMERALD_BLOCK]: (d) =>
+    paintGemBlock(d, [35, 185, 80], [90, 235, 130], [15, 110, 45], 218),
+  [TEX.QUARTZ_BLOCK]: paintQuartzBlock,
+  [TEX.AMETHYST_BLOCK]: paintAmethystBlock,
 };
 
 const blitTile = (

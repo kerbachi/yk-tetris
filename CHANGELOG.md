@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   hotbar icons, and a first-person held-item view.
 - **Inventory (E)** — Minecraft-style creative inventory with tabs (All / Tools /
   Blocks / Ores); pick up items and place them on the 9-slot hotbar.
+- **More realistic item art** — richer ore clusters & mineral-block textures,
+  shaded tool icons, and isometric cube icons for blocks in the hotbar/inventory.
 
 ### Changed
 

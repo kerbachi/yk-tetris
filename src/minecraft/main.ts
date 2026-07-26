@@ -1,5 +1,4 @@
 import './style.css';
-import { BLOCKS } from './blocks';
 import { MinecraftGame, type HudSnapshot } from './game';
 import {
   HOTBAR_SIZE,
@@ -10,9 +9,8 @@ import {
   type HotbarSlot,
   type InventoryTab,
 } from './items';
-import { createAtlasCanvas, tileIconDataUrl } from './textures';
-import { TOOLS } from './tools';
-import { toolIconDataUrl } from './toolIcons';
+import { itemIconDataUrl } from './itemIcons';
+import { createAtlasCanvas } from './textures';
 
 const viewport = document.getElementById('viewport')!;
 const overlay = document.getElementById('overlay')!;
@@ -38,10 +36,7 @@ let activeTab: InventoryTab = 'all';
 let cursorItem: HotbarSlot = null;
 let hasPlayed = false;
 
-const itemIconUrl = (item: HotbarItem): string => {
-  if (item.kind === 'tool') return toolIconDataUrl(TOOLS[item.id]!);
-  return tileIconDataUrl(atlas, BLOCKS[item.id]!.textures[0]!);
-};
+const itemIconUrl = (item: HotbarItem): string => itemIconDataUrl(atlas, item, 40);
 
 const paintSlot = (el: HTMLElement, item: HotbarSlot, selected: boolean): void => {
   el.classList.toggle('selected', selected);
