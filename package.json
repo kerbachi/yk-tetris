@@ -5,7 +5,7 @@
   "type": "module",
   "main": "electron/main.cjs",
   "author": "yk-tetris maintainers <noreply@users.noreply.github.com>",
-  "description": "A browser and desktop Tetris game built with Vite, TypeScript and Electron.",
+  "description": "A browser Minecraft-style voxel sandbox (yk-minecraft) built with Vite, TypeScript, Three.js, and Electron.",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
@@ -22,6 +22,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
+    "@types/three": "^0.185.1",
     "electron": "^33.2.1",
     "electron-builder": "^25.1.8",
     "eslint": "^9.17.0",
@@ -31,8 +32,8 @@
     "vitest": "^2.1.8"
   },
   "build": {
-    "appId": "com.yk.tetris",
-    "productName": "yk-tetris",
+    "appId": "com.yk.minecraft",
+    "productName": "yk-minecraft",
     "directories": {
       "output": "release",
       "buildResources": "build"
@@ -48,8 +49,8 @@
       ],
       "category": "Game",
       "icon": "build/icon.png",
-      "maintainer": "yk-tetris maintainers <noreply@users.noreply.github.com>",
-      "artifactName": "yk-tetris-${version}-linux-x86_64.${ext}"
+      "maintainer": "yk-minecraft maintainers <noreply@users.noreply.github.com>",
+      "artifactName": "yk-minecraft-${version}-linux-x86_64.${ext}"
     },
     "win": {
       "target": [
@@ -57,12 +58,12 @@
         "zip"
       ],
       "icon": "build/icon.ico",
-      "artifactName": "yk-tetris-${version}-win-x64-portable.${ext}"
+      "artifactName": "yk-minecraft-${version}-win-x64-portable.${ext}"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "artifactName": "yk-tetris-Setup-${version}-win-x64.${ext}"
+      "artifactName": "yk-minecraft-Setup-${version}-win-x64.${ext}"
     },
     "mac": {
       "target": [
@@ -72,7 +73,10 @@
       "icon": "build/icon.png",
       "category": "public.app-category.games",
       "identity": null,
-      "artifactName": "yk-tetris-${version}-mac-${arch}.${ext}"
+      "artifactName": "yk-minecraft-${version}-mac-${arch}.${ext}"
     }
+  },
+  "dependencies": {
+    "three": "^0.185.1"
   }
 }

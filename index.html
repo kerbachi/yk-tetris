@@ -5,83 +5,57 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/png" href="./favicon.png" />
     <link rel="shortcut icon" href="./favicon.ico" />
-    <title>yk-tetris</title>
+    <title>yk-minecraft</title>
   </head>
   <body>
-    <canvas id="bg" aria-hidden="true"></canvas>
-    <div id="app">
-      <h1>yk-tetris</h1>
-      <div class="layout">
-        <canvas id="board" width="300" height="600"></canvas>
-        <aside class="panel">
-          <div class="stat">
-            <span class="label">Score</span>
-            <span id="score" class="value">0</span>
-          </div>
-          <div class="stat">
-            <span class="label">Lines</span>
-            <span id="lines" class="value">0</span>
-          </div>
-          <div class="stat">
-            <span class="label">Level</span>
-            <span id="level" class="value">1</span>
-          </div>
-          <div class="stat">
-            <span class="label">Next</span>
-            <canvas id="next" width="120" height="120"></canvas>
-          </div>
-          <div class="stat" id="difficulty-panel">
-            <span class="label">Difficulty</span>
-            <div id="difficulty" class="difficulty" role="group" aria-label="Select difficulty">
-              <button type="button" data-difficulty="1" class="active">1</button>
-              <button type="button" data-difficulty="2">2</button>
-              <button type="button" data-difficulty="3">3</button>
-              <button type="button" data-difficulty="4">4</button>
-              <button type="button" data-difficulty="5">5</button>
-            </div>
-          </div>
-          <button id="start">Start / Restart</button>
-          <p id="status" class="status">Press Start</p>
-          <ul class="help">
-            <li>&larr; &rarr; : Move</li>
-            <li>&uarr; : Rotate</li>
-            <li>&darr; : Soft drop</li>
-            <li>Space : Hard drop</li>
-            <li>P : Pause</li>
-          </ul>
-        </aside>
+    <div id="viewport" aria-label="Minecraft world"></div>
+    <div id="crosshair" aria-hidden="true"></div>
+    <div id="break-bar" class="hidden" aria-hidden="true">
+      <div id="break-fill"></div>
+    </div>
+    <img id="held-item" class="hidden" alt="" width="96" height="96" />
+
+    <div id="hud-top">
+      <div class="chip"><span id="selected">Diamond Pickaxe</span> · <span id="fps">0 FPS</span></div>
+      <div id="pickup-toast" class="chip toast hidden"></div>
+    </div>
+
+    <div id="hotbar" role="toolbar" aria-label="Item hotbar"></div>
+
+    <div id="inventory" class="hidden" role="dialog" aria-modal="true" aria-labelledby="inv-title">
+      <div class="inv-panel">
+        <header class="inv-header">
+          <h2 id="inv-title">Inventory</h2>
+          <button type="button" id="inv-close" aria-label="Close inventory">✕</button>
+        </header>
+        <div class="inv-tabs" role="tablist" aria-label="Item categories">
+          <button type="button" data-tab="all" class="active">All</button>
+          <button type="button" data-tab="tools">Tools</button>
+          <button type="button" data-tab="blocks">Blocks</button>
+          <button type="button" data-tab="ores">Ores</button>
+          <button type="button" data-tab="food">Food</button>
+        </div>
+        <div id="inv-grid" class="inv-grid" role="list"></div>
+        <p id="inv-hint" class="inv-hint">Click an item to pick it up · click a hotbar slot to place · E / Esc close</p>
+        <div id="inv-hotbar" class="inv-hotbar" aria-label="Hotbar"></div>
+      </div>
+      <img id="inv-cursor" class="hidden" alt="" width="40" height="40" />
+    </div>
+
+    <div id="overlay">
+      <div class="overlay-card">
+        <h1>yk-minecraft</h1>
+        <p>A browser voxel sandbox — mine with tools, chop trees, and build.</p>
+        <button id="play" type="button">Click to play</button>
+        <div class="controls">
+          <div><code>W A S D</code> move · <code>Space</code> jump · <code>Shift</code> sprint</div>
+          <div><code>Hold LMB</code> mine · <code>LMB</code> attack mobs · <code>RMB</code> place</div>
+          <div><code>E</code> inventory · walk over drops to pick up meat &amp; loot</div>
+          <div><code>1</code>–<code>9</code> hotbar · <code>Esc</code> release mouse</div>
+        </div>
       </div>
     </div>
-    <div id="gameover-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="gameover-title">
-      <div class="modal-card">
-        <h2 id="gameover-title">Game Over</h2>
-        <div class="modal-stats">
-          <div class="stat">
-            <span class="label">Score</span>
-            <span id="final-score" class="value">0</span>
-          </div>
-          <div class="stat">
-            <span class="label">Lines</span>
-            <span id="final-lines" class="value">0</span>
-          </div>
-          <div class="stat">
-            <span class="label">Level</span>
-            <span id="final-level" class="value">1</span>
-          </div>
-        </div>
-        <div class="stat modal-difficulty">
-          <span class="label">Difficulty</span>
-          <div id="difficulty-modal" class="difficulty" role="group" aria-label="Select difficulty">
-            <button type="button" data-difficulty="1" class="active">1</button>
-            <button type="button" data-difficulty="2">2</button>
-            <button type="button" data-difficulty="3">3</button>
-            <button type="button" data-difficulty="4">4</button>
-            <button type="button" data-difficulty="5">5</button>
-          </div>
-        </div>
-        <button id="play-again">Play Again</button>
-      </div>
-    </div>
-    <script type="module" src="/src/main.ts"></script>
+
+    <script type="module" src="/src/minecraft/main.ts"></script>
   </body>
 </html>

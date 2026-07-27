@@ -5,6 +5,34 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **yk-minecraft** — a browser Minecraft-style voxel sandbox with procedural
+  terrain, trees, first-person controls, block break/place, and an 8-slot hotbar.
+- **Minecraft-like block textures** — 16×16 pixel atlas (grass top/side, dirt,
+  stone, cobble, log rings/bark, planks, leaves, sand, water, bedrock) with
+  nearest-neighbor filtering so blocks read like classic Minecraft.
+- **Mineral ores & blocks** — coal, iron, copper, gold, redstone, lapis, diamond,
+  emerald ores (veins underground) plus matching storage blocks, quartz, and
+  amethyst; scrollable 9-slot hotbar (keys 1–9 / mouse wheel).
+- **Tools** — wooden/stone/iron/gold/diamond pickaxe, axe, shovel, sword, and hoe
+  with hold-to-mine speeds, correct-tool bonuses, harvest levels for hard ores,
+  hotbar icons, and a first-person held-item view.
+- **Inventory (E)** — Minecraft-style creative inventory with tabs (All / Tools /
+  Blocks / Ores); pick up items and place them on the 9-slot hotbar.
+- **More realistic item art** — richer ore clusters & mineral-block textures,
+  shaded tool icons, and isometric cube icons for blocks in the hotbar/inventory.
+- **Mobs** — pigs, cows, chickens, and sheep wander the world; attack with LMB
+  (swords hit harder). Kills drop meat and loot you can pick up (Food inventory tab).
+
+### Changed
+
+- **Minecraft is the main app** — `index.html` opens the voxel sandbox (no Tetris
+  back-link). Legacy Tetris lives at `tetris.html`. Electron window title/size
+  and desktop product name are `yk-minecraft`.
+
 ## [0.1.2] - 2026-07-18
 
 ### Added
